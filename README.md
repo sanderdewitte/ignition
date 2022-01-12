@@ -1,6 +1,6 @@
 # Ignition
 
-Ignition files, for instance for Fedore CoreOS
+Human readable Butane Configs that can be translated into machine readable Ignition Configs using the coreos/butane Docker container
 
 ## How to use
 
