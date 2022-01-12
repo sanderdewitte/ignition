@@ -60,8 +60,8 @@ systemd:
         TimeoutStartSec=0
         ExecStartPre=-/usr/bin/docker stop %n
         ExecStartPre=-/usr/bin/docker rm %n
-        ExecStartPre=/usr/bin/docker pull portainer/portainer-ce:latest
-        ExecStart=-/usr/bin/docker volume create portainer_data
+        ExecStartPre=-/usr/bin/docker volume create portainer_data
+        ExecStartPre=-/usr/bin/docker pull portainer/portainer-ce:latest
         ExecStart=/usr/bin/docker run -d -p 8000:8000 -p 9443:9443 --name %n --restart always -v /var/run/docker.sock:/var/run/docker.sock:z -v /var/portainer_data:/data:z portainer/portainer-ce
         ExecStop=/usr/bin/docker stop -t 15 %n
         ExecStopPost=-/usr/bin/docker rm %n
