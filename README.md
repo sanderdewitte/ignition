@@ -2,6 +2,11 @@
 
 Human readable Butane Configs that can be translated into machine readable Ignition Configs using the coreos/butane Docker container
 
+## Requirements
+- make
+- docker
+- base64
+
 ## How to use
 
 1. `git clone https://github.com/sanderdewitte/ignition.git`
