@@ -1,0 +1,69 @@
+variant: fcos
+version: 1.4.0
+passwd:
+  users:
+    - name: core
+      ssh_authorized_keys:
+        - ssh-rsa AAAAB3NzaC1yc2EAAAABJQAAAQEAm0AeqG8MMlNPXihtXzcafsYPb2Gpiu9EFsNBIykwDGexQWKv2q9LcI9TVLTc/AMLzgah+SG9aLCSiimHtfgbW7jYA//BWzCz6spfugN9Jr+MOJ8DqO83gHU7THWQ8dSrVUkgtkZRHLUL6iB+2XpfMeIojwzIzOkpmYuv8jgcYGJQaoQMy+qrUjcvM1kbYT02pUXmk5uZBxi0CEBxdltKKbC36et/3PdaDmXHmzFQZgrXmkBYtbOukPhCsJ7SgUZbePidOnULC7LQtRnaMlcqUpa1VC94pFWR4iSfsI3ocEdjyrRfoQX7EUf8cfO91JPGSHh9QTp3VsswuizEJnw5oQ== rsa-key-20141223
+storage:
+  files:
+    - path: /etc/hostname
+      overwrite: true
+      mode: 0644
+      contents:
+        inline: |
+          sdewitte-vps
+    - path: /etc/profile.d/systemd-pager.sh
+      mode: 0644
+      contents:
+        inline: |
+          # Tell systemd to not use a pager when printing information
+          export SYSTEMD_PAGER=cat
+    - path: /etc/sysctl.d/20-silence-audit.conf
+      mode: 0644
+      contents:
+        inline: |
+          # Raise console message logging level from DEBUG (7) to WARNING (4)
+          # to hide audit messages from the interactive console
+          kernel.printk=4
+    - path: /etc/zincati/config.d/51-rollout-wariness.toml
+      contents:
+        inline: |
+          [identity]
+          rollout_wariness = 0.001
+    - path: /etc/zincati/config.d/55-updates-strategy.toml
+      contents:
+        inline: |
+          [updates]
+          strategy = "periodic"
+          [[updates.periodic.window]]
+          days = [ "Sat", "Sun" ]
+          start_time = "23:00"
+          length_minutes = 60
+  links:
+    - path: /etc/localtime
+      target: /usr/share/zoneinfo/Europe/Amsterdam
+systemd:
+  units:
+    - name: docker.portainer.service
+      enabled: true
+      contents: |-
+        [Unit]
+        Description=Portainer Admin Container
+        After=docker.service
+        Requires=docker.service network.target network-online.target
+
+        [Service]
+        Type=oneshot
+        RemainAfterExit=yes
+        TimeoutStartSec=0
+        ExecStartPre=-/usr/bin/docker stop %n
+        ExecStartPre=-/usr/bin/docker rm %n
+        ExecStartPre=/usr/bin/docker pull portainer/portainer-ce
+        ExecStart=-/usr/bin/mkdir -p /mnt/shared_nfs/portainer_data
+        # Privileged mode is required for binding to local socket to work due to SELINUX (https://github.com/portainer/portainer/issues/849)
+        ExecStart=/usr/bin/docker run --privileged=true -d -p 9000:9000 --name %n --restart always -v /var/run/docker.sock:/var/run/docker.sock -v /var/portainer_data:/data portainer/portainer-ce
+        ExecStop=/usr/bin/docker stop -t 15 %n
+
+        [Install]
+        WantedBy=multi-user.target
