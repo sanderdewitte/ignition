@@ -62,7 +62,7 @@ systemd:
         ExecStartPre=-/usr/bin/docker rm %n
         ExecStartPre=/usr/bin/docker pull portainer/portainer-ce
         ExecStart=-/usr/bin/mkdir -p /mnt/shared_nfs/portainer_data
-        ExecStart=/usr/bin/docker run -d -p 9000:9000 --name %n --restart always -v /var/run/docker.sock:/var/run/docker.sock:z -v /var/portainer_data:/data:z portainer/portainer-ce
+        ExecStart=/usr/bin/docker run -d -p 8000:8000 -p 9000:9000 --name %n --restart always -v /var/run/docker.sock:/var/run/docker.sock:z -v /var/portainer_data:/data:z portainer/portainer-ce
         ExecStop=/usr/bin/docker stop -t 15 %n
         ExecStopPost=-/usr/bin/docker rm %n
 
