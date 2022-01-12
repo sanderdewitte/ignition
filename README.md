@@ -13,3 +13,4 @@ Human readable Butane Configs that can be translated into machine readable Ignit
 1. `cd ./ignition`
 1. `make BUTANE=<BUTANE file name>`
 1. Put `ignition.ign.b64` to `Ignition config-data / user-data` property or serve `ignition.ign` with a HTTP server
+1. `make clean BUTANE=<BUTANE file name>
