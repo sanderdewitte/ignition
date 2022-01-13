@@ -8,8 +8,8 @@ ignition:
       - source: https://sanderdewitte.github.io/ignition/butane.d/portainer.bu
       - source: https://sanderdewitte.github.io/ignition/butane.d/netdata.bu
   timeouts:
-    - http_response_headers: 6
-    - http_total: 60
+    http_response_headers: 6
+    http_total: 60
 passwd:
   users:
     - name: core
