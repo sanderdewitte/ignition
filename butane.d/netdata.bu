@@ -2,7 +2,7 @@ variant: fcos
 version: 1.4.0
 storage:
   directories:
-    - path: "/opt/systemd/netdatar"
+    - path: "/opt/systemd/netdata"
       mode: 0644
   files:
     - path: "/opt/systemd/netdata/docker-compose.yml"
