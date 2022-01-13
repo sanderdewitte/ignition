@@ -1,2 +1,74 @@
 variant: fcos
 version: 1.4.0
+storage:
+  directories:
+    - path: "/opt/systemd/traefik"
+      mode: 0644
+  files:
+    - path: "/opt/systemd/traefik/docker-compose.yml"
+      mode: 0644
+      contents:
+        inline: |-
+          version: '3.9'
+          services:
+            reverse-proxy:
+              image: traefik:v2.6
+              container_name: traefik
+              volumes:
+                - '/var/run/docker.sock:/var/run/docker.sock:ro'
+                - '/opt/mediadepot/traefik/letsencrypt:/letsencrypt'
+              ports:
+                - 80:80
+                - 443:443
+                - 8080:8080
+              labels:
+                - traefik.enable=true
+                - traefik.http.routers.https-redirect.entrypoints=web
+                - traefik.http.routers.https-redirect.rule=HostRegexp(`{any:.*}`)
+                - traefik.http.routers.https-redirect.middlewares=https-only
+                - traefik.http.middlewares.https-only.redirectscheme.scheme=https
+                - 'traefik.http.routers.traefik.rule=Host(`traefik.localhost`)'
+                - traefik.http.routers.traefik.entrypoints=websecure
+                - 'traefik.http.routers.traefik.service=api@internal'
+                - traefik.http.routers.traefik.tls.certresolver=mydnschallenge
+              command:
+                - --api.insecure=true
+                - --providers.docker
+                - --providers.docker.exposedByDefault=false
+                - --providers.docker.network=traefik
+                - --entrypoints.web.address=:80
+                - --entrypoints.websecure.address=:443
+                - '--providers.docker.defaultRule=Host(`{{ normalize .Name }}.localhost`)'
+                - "--certificatesresolvers.mydnschallenge.acme.dnschallenge=true"
+                - "--certificatesresolvers.mydnschallenge.acme.dnschallenge.provider=cloudflare"
+                - "--certificatesresolvers.mydnschallenge.acme.email=postmaster@localhost"
+                - "--certificatesresolvers.mydnschallenge.acme.storage=/letsencrypt/acme.json"
+                - "--serverstransport.forwardingtimeouts.idleconntimeout=10"
+              networks:
+                - traefik
+          networks:
+            traefik:
+              external: true
+systemd:
+  units:
+  - name: docker.traefik.service
+    enabled: true
+    contents: |-
+      [Unit]
+      Description=Traefik Router Container
+      After=docker.service
+      Requires=docker.service
+      
+      [Service]
+      Type=oneshot
+      TimeoutStartSec=0
+      Restart=always
+      WorkingDirectory=/opt/systemd/traefik/
+      ExecStartPre=-/usr/bin/docker-compose down -v
+      ExecStartPre=-/usr/bin/docker-compose rm -v
+      ExecStartPre=-/usr/bin/docker-compose pull
+      ExecStart=/usr/bin/docker-compose up
+      ExecStop=/usr/bin/docker-compose down -v
+      
+      [Install]
+      WantedBy=multi-user.target
