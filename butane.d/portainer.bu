@@ -47,7 +47,6 @@ systemd:
     contents: |-
       [Unit]
       Description=Portainer Admin Container
-      Wants=network-online.target
       After=network-online.target docker.service
       Requires=docker.service network.target network-online.target
 
@@ -64,4 +63,3 @@ systemd:
 
       [Install]
       WantedBy=multi-user.target
-      WantedBy=docker.service
