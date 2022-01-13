@@ -1,6 +1,9 @@
 variant: fcos
 version: 1.4.0
 storage:
+  directories:
+    - path: "/opt/systemd"
+      mode: 0644
   files:
     - path: /etc/profile.d/10-systemd-pager.sh
       mode: 0644
