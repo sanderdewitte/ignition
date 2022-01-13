@@ -54,7 +54,7 @@ systemd:
         Description=Layer docker-compose with rpm-ostree
         Wants=network-online.target
         After=network-online.target
-        Before=zincati.service
+        Before=zincati.service docker.service
         ConditionPathExists=!/var/lib/%N.stamp
 
         [Service]
