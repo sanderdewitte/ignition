@@ -1,2 +1,67 @@
 variant: fcos
 version: 1.4.0
+storage:
+  directories:
+    - path: "/opt/systemd/portainer"
+      mode: 0644
+  files:
+    - path: "/opt/systemd/portainer/docker-compose.yml"
+      mode: 0644
+      contents:
+        inline: |-
+          version: '3.9'
+          services:
+            portainer:
+              image: portainer/portainer-ce:alpine
+              container_name: portainer
+              volumes:
+                - 'portainer_data:/data'
+                - '/var/run/docker.sock:/var/run/docker.sock'
+              ports:
+                - 8000:8000
+                - 9433:9433
+              networks:
+                - traefik
+              labels:
+                - 'traefik.enable=true'
+                - 'traefik.http.services.portainer.loadbalancer.server.port=9433'
+                - 'traefik.http.services.portainer.loadbalancer.server.port=8000'
+                - 'traefik.http.routers.portainer.rule=Host(`portainer.localhost`)'
+                - 'traefik.http.routers.portainer.entrypoints=websecure'
+                - 'traefik.http.routers.portainer.tls.certresolver=mydnschallenge'
+              command:
+                - --no-analytics
+                - --host=unix:///var/run/docker.sock
+                - --security-opt=label:disable
+              restart: always
+          networks:
+            traefik:
+              external: true
+          volumes:
+            portainer_data:
+              external: false
+systemd:
+  units:
+  - name: docker.portainer.service
+    enabled: true
+    contents: |-
+      [Unit]
+      Description=Portainer Admin Container
+      Wants=network-online.target
+      After=network-online.target docker.service
+      Requires=docker.service network.target network-online.target
+
+      [Service]
+      Type=oneshot
+      TimeoutStartSec=0
+      Restart=always
+      WorkingDirectory=/opt/systemd/portainer/
+      ExecStartPre=-/usr/bin/docker-compose down -v
+      ExecStartPre=-/usr/bin/docker-compose rm -v
+      ExecStartPre=-/usr/bin/docker-compose pull
+      ExecStart=/usr/bin/docker-compose up
+      ExecStop=/usr/bin/docker-compose down -v
+
+      [Install]
+      WantedBy=multi-user.target
+      WantedBy=docker.service
