@@ -1,5 +1,12 @@
 variant: fcos
 version: 1.4.0
+ignition:
+  config:
+    merge:
+    - source: https://sanderdewitte.github.io/ignition/butane.d/base.bu
+    - source: https://sanderdewitte.github.io/ignition/butane.d/portainer.bu
+    - source: https://sanderdewitte.github.io/ignition/butane.d/traefik.bu
+    - source: https://sanderdewitte.github.io/ignition/butane.d/netdata.bu
 passwd:
   users:
     - name: core
