@@ -44,3 +44,21 @@ systemd:
 
         [Install]
         WantedBy=multi-user.target
+    - name: rpm-ostree-install-docker-compose.service
+      enabled: true
+      contents: |
+        [Unit]
+        Description=Layer docker-compose with rpm-ostree
+        Wants=network-online.target
+        After=network-online.target
+        Before=zincati.service
+        ConditionPathExists=!/var/lib/%N.stamp
+
+        [Service]
+        Type=oneshot
+        RemainAfterExit=yes
+        ExecStart=/usr/bin/rpm-ostree install --apply-live --allow-inactive docker-compose
+        ExecStart=/bin/touch /var/lib/%N.stamp
+
+        [Install]
+        WantedBy=multi-user.target
