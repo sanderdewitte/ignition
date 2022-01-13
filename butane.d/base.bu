@@ -2,11 +2,11 @@ variant: fcos
 version: 1.4.0
 storage:
   files:
-    - path: /etc/profile.d/systemd-pager.sh
+    - path: /etc/profile.d/10-systemd-pager.sh
       mode: 0644
       contents:
         inline: |
-          # Tell systemd to not use a pager when printing information
+          #/bin/sh
           export SYSTEMD_PAGER=cat
     - path: /etc/sysctl.d/20-silence-audit.conf
       mode: 0644
@@ -14,4 +14,30 @@ storage:
         inline: |
           # Raise console message logging level from DEBUG (7) to WARNING (4)
           # to hide audit messages from the interactive console
-          kernel.printk=4
+          kernel.printk=4storage:
+    - path: /etc/profile.d/99-default-editor.sh
+      overwrite: true
+      contents:
+        inline: |
+          #/bin/sh
+          export EDITOR=vim
+systemd:
+  units:
+    - name: rpm-ostree-install-vim.service
+      enabled: true
+      contents: |
+        [Unit]
+        Description=Layer vim with rpm-ostree
+        Wants=network-online.target
+        After=network-online.target
+        Before=zincati.service
+        ConditionPathExists=!/var/lib/%N.stamp
+
+        [Service]
+        Type=oneshot
+        RemainAfterExit=yes
+        ExecStart=/usr/bin/rpm-ostree install --apply-live --allow-inactive vim
+        ExecStart=/bin/touch /var/lib/%N.stamp
+
+        [Install]
+        WantedBy=multi-user.target
