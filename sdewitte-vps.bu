@@ -40,28 +40,3 @@ storage:
   links:
     - path: /etc/localtime
       target: /usr/share/zoneinfo/Europe/Amsterdam
-systemd:
-  units:
-    - name: docker.portainer.service
-      enabled: true
-      contents: |-
-        [Unit]
-        Description=Portainer Admin Container
-        Wants=network-online.target
-        After=network-online.target docker.service
-        Requires=docker.service network.target network-online.target
-
-        [Service]
-        Type=oneshot
-        RemainAfterExit=yes
-        TimeoutStartSec=0
-        ExecStartPre=-/usr/bin/docker stop %n
-        ExecStartPre=-/usr/bin/docker rm %n
-        ExecStartPre=-/usr/bin/docker volume create portainer_data
-        ExecStartPre=-/usr/bin/docker pull portainer/portainer-ce:latest
-        ExecStart=/usr/bin/docker run -d -p 8000:8000 -p 9443:9443 --name %n --restart always --security-opt label:disable -v /var/run/docker.sock:/var/run/docker.sock:z -v portainer_data:/data:z portainer/portainer-ce
-        ExecStop=/usr/bin/docker stop -t 15 %n
-        ExecStopPost=-/usr/bin/docker rm %n
-
-        [Install]
-        WantedBy=multi-user.target
