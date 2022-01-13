@@ -1,2 +1,59 @@
 variant: fcos
 version: 1.4.0
+storage:
+  directories:
+    - path: "/opt/systemd/netdatar"
+      mode: 0644
+  files:
+    - path: "/opt/systemd/netdata/docker-compose.yml"
+      mode: 0644
+      contents:
+        inline: |-
+          version: '3.9'
+          services:
+            netdata:
+              image: netdata/netdata
+              container_name: netdata
+              cap_add:
+                - SYS_PTRACE
+              security_opt:
+                - seccomp:unconfined
+                - apparmor:unconfined
+              volumes:
+                - '/proc:/host/proc:ro'
+                - '/sys:/host/sys:ro'
+                - '/var/run/docker.sock:/var/run/docker.sock:ro'
+              labels:
+                - 'traefik.enable=true'
+                - 'traefik.http.services.netdata.loadbalancer.server.port=19999'
+                - 'traefik.http.routers.netdata.rule=Host(`netdata.localhost`)'
+                - 'traefik.http.routers.netdata.entrypoints=websecure'
+                - 'traefik.http.routers.netdata.tls.certresolver=mydnschallenge'
+              networks:
+                - traefik
+          networks:
+            traefik:
+              external: true
+systemd:
+  units:
+  - name: docker.netdata.service
+    enabled: true
+    contents: |-
+      [Unit]
+      Description=Netdata Container
+      After=docker.service
+      Requires=docker.service
+      
+      [Service]
+      Type=oneshot
+      TimeoutStartSec=0
+      Restart=alwayss
+      WorkingDirectory=/opt/systemd/netdata/
+      ExecStartPre=-/usr/bin/docker-compose down -v
+      ExecStartPre=-/usr/bin/docker-compose rm -v
+      ExecStartPre=-/usr/bin/docker-compose pull
+      ExecStart=/usr/bin/docker-compose up
+      ExecStop=/usr/bin/docker-compose down -v
+      
+      [Install]
+      WantedBy=multi-user.target
