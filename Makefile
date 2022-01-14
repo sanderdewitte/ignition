@@ -23,8 +23,13 @@ generate-butane:
 	${DOCKER} run --rm \
 		--volume ${PWD}:/workdir:Z \
 		${YAML_PROCESSOR_IMAGE} \
-		ea '. as $$item ireduce ({}; . *+ $$item )' ./${BUTANE} ${BUTANE_MERGERS} \
+		eval-all '. as $$item ireduce ({}; . *+ $$item )' ./${BUTANE} ${BUTANE_MERGERS} \
 	        > ${TEMP_DIR}/${BUTANE}
+	${DOCKER} run --rm \
+		--volume ${PWD}:/workdir:Z \
+		${YAML_PROCESSOR_IMAGE} \
+		--inplace \
+		eval 'del(.ignition.config.merge)' ${TEMP_DIR}/${BUTANE}
 
 butane: generate-butane
 
