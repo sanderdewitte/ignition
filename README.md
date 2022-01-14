@@ -12,5 +12,5 @@ Human readable Butane Configs that can be translated into machine readable Ignit
 1. `git clone https://github.com/sanderdewitte/ignition.git`
 1. `cd ./ignition`
 1. `make BUTANE=<BUTANE file name>`
-1. Put `resulting Ignition file (.ign) to `Ignition config-data / user-data` property or serve it with an HTTP server
+1. Put resulting Ignition file (.ign) to `Ignition config-data / user-data` property or serve it with an HTTP server
 1. `make clean BUTANE=<BUTANE file name>`
