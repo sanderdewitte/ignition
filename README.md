@@ -3,9 +3,9 @@
 Human readable Butane Configs that can be translated into machine readable Ignition Configs using the coreos/butane Docker container
 
 ## Requirements
-- make (GNU Make 4.2.1 or later)
-- docker (Docker 20.10.12 or later)
-- base64 (base64, GNU coreutils, 8.30 or later)
+- make (tested with GNU Make 4.2.1)
+- awk (tested with GNU Awk 5.0.1)
+- docker (tested with Docker 20.10.12)
 
 ## How to use
 
