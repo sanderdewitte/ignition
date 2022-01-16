@@ -3,8 +3,12 @@ version: 1.4.0
 storage:
   directories:
     - path: "/opt/systemd"
-      mode: 0755
+      mode: 0755 
   files:
+    - path: /opt/bootstrap/coreos-env.sh
+      mode: 0755
+      contents:
+        local: coreos-env.sh
     - path: /etc/profile.d/systemd-pager.sh
       mode: 0644
       overwrite: true
@@ -50,6 +54,22 @@ storage:
           endif
 systemd:
   units:
+    - name: coreos-env.service
+      enabled: true
+      contents: |
+        [Unit]
+        Description=Generate CoreOS environmental variables file
+        After=network-online.target
+        Requires=network-online.target
+
+        [Service]
+        Type=oneshot
+        ExecStart=/opt/bootstrap/depot-env.sh
+        RemainAfterExit=yes
+        StandardOutput=journal
+
+        [Install]
+        WantedBy=multi-user.target
     - name: rpm-ostree-install-additional-software-packages.service
       enabled: true
       contents: |
