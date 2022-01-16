@@ -30,7 +30,7 @@ storage:
                 - 'traefik.http.routers.traefik.rule=Host(`traefik.${SERVER_DOMAIN_NAME}`)'
                 - traefik.http.routers.traefik.entrypoints=websecure
                 - 'traefik.http.routers.traefik.service=api@internal'
-                - traefik.http.routers.traefik.tls.certresolver=mydnschallenge
+                - traefik.http.routers.traefik.tls.certresolver=le
               command:
                 - --api.insecure=true
                 - --providers.docker
