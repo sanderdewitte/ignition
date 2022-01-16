@@ -3,15 +3,20 @@ version: 1.4.0
 storage:
   directories:
     - path: "/opt/systemd"
-      mode: 0644
+      mode: 0755
   files:
-    - path: /etc/profile.d/10-systemd-pager.sh
+    - path: /etc/profile.d/systemd-pager.sh
       mode: 0644
       overwrite: true
       contents:
         inline: |
-          #/bin/sh
           export SYSTEMD_PAGER=cat
+    - path: /etc/profile.d/systemd-pager.csh
+      mode: 0644
+      overwrite: true
+      contents:
+        inline: |
+          setenv SYSTEMD_PAGER cat
     - path: /etc/sysctl.d/20-silence-audit.conf
       mode: 0644
       overwrite: true
@@ -19,49 +24,49 @@ storage:
         inline: |
           # Raise console message logging level from DEBUG (7) to WARNING (4)
           # to hide audit messages from the interactive console
-          kernel.printk=4storage:
-    - path: /etc/profile.d/99-default-editor.sh
+          kernel.printk=4
+    - path: /etc/sysctl.d/90-sysrq.conf
       mode: 0644
       overwrite: true
       contents:
         inline: |
-          #/bin/sh
-          export EDITOR=vim
+          # Disables the magic SysRq key
+          kernel.sysrq = 0
+    - path: /etc/profile.d/default-editor.sh
+      mode: 0644
+      overwrite: true
+      contents:
+        inline: |
+          if [ -x /usr/bin/vim ]; then
+            export EDITOR=vim
+          fi
+    - path: /etc/profile.d/default-editor.csh
+      mode: 0644
+      overwrite: true
+      contents:
+        inline: |
+          if ( -x /usr/bin/vim ) then
+            setenv EDITOR vim
+          endif
 systemd:
   units:
-    - name: rpm-ostree-install-vim.service
+    - name: rpm-ostree-install-additional-software-packages.service
       enabled: true
       contents: |
         [Unit]
-        Description=Layer vim with rpm-ostree
+        Description=Layer additional software with rpm-ostree
+        Documentation=man:rpm-ostree(1)
         Wants=network-online.target
         After=network-online.target
         Before=zincati.service
+        ConditionPathExists=/run/ostree-booted
         ConditionPathExists=!/var/lib/%N.stamp
 
         [Service]
         Type=oneshot
-        RemainAfterExit=yes
-        ExecStart=/usr/bin/rpm-ostree install --apply-live --allow-inactive vim
+        ExecStart=/usr/bin/rpm-ostree install --apply-live --allow-inactive --idempotent vim docker-compose
         ExecStart=/bin/touch /var/lib/%N.stamp
-
-        [Install]
-        WantedBy=multi-user.target
-    - name: rpm-ostree-install-docker-compose.service
-      enabled: true
-      contents: |
-        [Unit]
-        Description=Layer docker-compose with rpm-ostree
-        Wants=network-online.target
-        After=network-online.target
-        Before=zincati.service docker.service
-        ConditionPathExists=!/var/lib/%N.stamp
-
-        [Service]
-        Type=oneshot
         RemainAfterExit=yes
-        ExecStart=/usr/bin/rpm-ostree install --apply-live --allow-inactive docker-compose
-        ExecStart=/bin/touch /var/lib/%N.stamp
 
         [Install]
         WantedBy=multi-user.target
