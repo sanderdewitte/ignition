@@ -27,7 +27,7 @@ storage:
                 - traefik.http.routers.https-redirect.rule=HostRegexp(`{any:.*}`)
                 - traefik.http.routers.https-redirect.middlewares=https-only
                 - traefik.http.middlewares.https-only.redirectscheme.scheme=https
-                - 'traefik.http.routers.traefik.rule=Host(`traefik.localhost`)'
+                - 'traefik.http.routers.traefik.rule=Host(`traefik.${SERVER_DOMAIN_NAME}`)'
                 - traefik.http.routers.traefik.entrypoints=websecure
                 - 'traefik.http.routers.traefik.service=api@internal'
                 - traefik.http.routers.traefik.tls.certresolver=mydnschallenge
@@ -38,10 +38,10 @@ storage:
                 - --providers.docker.network=traefik
                 - --entrypoints.web.address=:80
                 - --entrypoints.websecure.address=:443
-                - '--providers.docker.defaultRule=Host(`{{ normalize .Name }}.localhost`)'
+                - '--providers.docker.defaultRule=Host(`{{ normalize .Name }}.${SERVER_DOMAIN_NAME}`)'
                 - "--certificatesresolvers.mydnschallenge.acme.dnschallenge=true"
-                - "--certificatesresolvers.mydnschallenge.acme.dnschallenge.provider=cloudflare"
-                - "--certificatesresolvers.mydnschallenge.acme.email=postmaster@localhost"
+                - "--certificatesresolvers.mydnschallenge.acme.dnschallenge.provider=vultr"
+                - "--certificatesresolvers.mydnschallenge.acme.email=letsencrypt@${SERVER_DOMAIN_NAME}"
                 - "--certificatesresolvers.mydnschallenge.acme.storage=/letsencrypt/acme.json"
                 - "--serverstransport.forwardingtimeouts.idleconntimeout=10"
               networks:
