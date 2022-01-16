@@ -1,6 +1,6 @@
 # Ignition
 
-Human readable Butane Configs that can be translated into machine readable Ignition Configs using the coreos/butane Docker container
+Human readable Butane Configs that can be translated into machine readable Ignition Configs using make and the coreos/butane Docker container
 
 ## Requirements
 - make (tested with GNU Make 4.2.1)
