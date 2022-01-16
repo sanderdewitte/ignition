@@ -11,7 +11,7 @@ storage:
         inline: |-
           version: '3.9'
           services:
-            reverse-proxy:
+            traefik:
               image: traefik:v2.6
               container_name: traefik
               volumes:
