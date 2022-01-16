@@ -3,6 +3,8 @@ version: 1.4.0
 storage:
   directories:
     - path: "/opt/systemd"
+      mode: 0755
+    - path: "/opt/bootstrap"
       mode: 0755 
   files:
     - path: /opt/bootstrap/coreos-env.sh
@@ -64,7 +66,7 @@ systemd:
 
         [Service]
         Type=oneshot
-        ExecStart=/opt/bootstrap/depot-env.sh
+        ExecStart=/opt/bootstrap/coreos-env.sh
         RemainAfterExit=yes
         StandardOutput=journal
 
