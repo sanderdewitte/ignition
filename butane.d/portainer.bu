@@ -56,6 +56,7 @@ systemd:
       TimeoutStartSec=0
       Restart=always
       WorkingDirectory=/opt/systemd/portainer/
+      ExecStartPre=-/usr/bin/timeout 2m /usr/bin/bash -c "while [ ! -x /usr/bin/docker-compose ]; do sleep 1; done"
       ExecStartPre=-/usr/bin/docker-compose down -v
       ExecStartPre=-/usr/bin/docker-compose rm -v
       ExecStartPre=-/usr/bin/docker-compose pull
