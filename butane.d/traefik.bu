@@ -3,7 +3,7 @@ version: 1.4.0
 storage:
   directories:
     - path: "/opt/systemd/traefik"
-      mode: 0644
+      mode: 0755
   files:
     - path: "/opt/systemd/traefik/docker-compose.yml"
       mode: 0644

@@ -3,7 +3,7 @@ version: 1.4.0
 storage:
   directories:
     - path: "/opt/systemd/portainer"
-      mode: 0644
+      mode: 0755
   files:
     - path: "/opt/systemd/portainer/docker-compose.yml"
       mode: 0644
