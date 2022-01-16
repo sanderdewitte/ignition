@@ -23,6 +23,12 @@ storage:
       contents:
         inline: |
           sdewitte-vps
+    - path: /etc/systemd/system/coreos-env.service.d/domain.conf"
+      mode: 0644
+      contents:
+        inline: |
+          [Service]
+          Environment="SERVER_DOMAIN_NAME=sanderdewitte.com"
     - path: /etc/zincati/config.d/51-rollout-wariness.toml
       contents:
         inline: |
