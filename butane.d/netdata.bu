@@ -20,9 +20,14 @@ storage:
                 - seccomp:unconfined
                 - apparmor:unconfined
               volumes:
-                - '/proc:/host/proc:ro'
-                - '/sys:/host/sys:ro'
-                - '/var/run/docker.sock:/var/run/docker.sock:ro'
+                - netdataconfig:/etc/netdata
+                - netdatalib:/var/lib/netdata
+                - netdatacache:/var/cache/netdata
+                - /proc:/host/proc:ro
+                - /sys:/host/sys:ro
+                - /var/run/docker.sock:/var/run/docker.sock:ro
+              ports:
+                - 19999:19999
               environment:
                 - 'PGID=${DOCKER_GROUP_ID}'
               labels:
@@ -33,6 +38,10 @@ storage:
                 - 'traefik.http.routers.netdata.tls.certresolver=mydnschallenge'
               networks:
                 - traefik
+          volumes:
+            netdataconfig:
+            netdatalib:
+            netdatacache:
           networks:
             traefik:
               external: true
