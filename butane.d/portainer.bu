@@ -48,15 +48,15 @@ systemd:
     contents: |-
       [Unit]
       Description=Portainer Admin Container
-      After=network-online.target docker.service
-      Requires=docker.service network.target network-online.target
+      After=network-online.target docker.service docker.traefik.service
+      Requires=network.target network-online.target docker.service docker.traefik.service
 
       [Service]
       Type=oneshot
       TimeoutStartSec=0
-      Restart=always
       WorkingDirectory=/opt/systemd/portainer/
       ExecStartPre=-/usr/bin/timeout 2m /usr/bin/bash -c "while [ ! -x /usr/bin/docker-compose ]; do sleep 1; done"
+      ExecStartPre=-/usr/bin/timeout 1m /usr/bin/bash -c "while [ ! -x \"$(find /usr/lib64 -name 'libpython3*.so.*' | head -1)\" ]; do sleep 1; done"
       ExecStartPre=-/usr/bin/docker-compose down -v
       ExecStartPre=-/usr/bin/docker-compose rm -v
       ExecStartPre=-/usr/bin/docker-compose pull

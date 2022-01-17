@@ -14,6 +14,7 @@ storage:
             traefik:
               image: traefik:v2.6
               container_name: traefik
+              privileged: true
               volumes:
                 - '/var/run/docker.sock:/var/run/docker.sock:ro'
                 - '/opt/mediadepot/traefik/letsencrypt:/letsencrypt'
@@ -48,7 +49,7 @@ storage:
                 - traefik
           networks:
             traefik:
-              external: true
+              name: front
 systemd:
   units:
   - name: docker.traefik.service
@@ -56,15 +57,15 @@ systemd:
     contents: |-
       [Unit]
       Description=Traefik Router Container
-      After=docker.service
-      Requires=docker.service
+      After=network-online.target docker.service
+      Requires=network.target network-online.target docker.service
       
       [Service]
       Type=oneshot
       TimeoutStartSec=0
-      Restart=always
       WorkingDirectory=/opt/systemd/traefik/
       ExecStartPre=-/usr/bin/timeout 2m /usr/bin/bash -c "while [ ! -x /usr/bin/docker-compose ]; do sleep 1; done"
+      ExecStartPre=-/usr/bin/timeout 1m /usr/bin/bash -c "while [ ! -x \"$(find /usr/lib64 -name 'libpython3*.so.*' | head -1)\" ]; do sleep 1; done"
       ExecStartPre=-/usr/bin/docker-compose down -v
       ExecStartPre=-/usr/bin/docker-compose rm -v
       ExecStartPre=-/usr/bin/docker-compose pull
