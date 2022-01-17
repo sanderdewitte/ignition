@@ -64,7 +64,7 @@ systemd:
 
         [Service]
         Type=oneshot
-        ExecStart=/opt/bootstrap/coreos-env.sh
+        ExecStart=/usr/local/bin/coreos-env.sh
         RemainAfterExit=yes
         StandardOutput=journal
 
