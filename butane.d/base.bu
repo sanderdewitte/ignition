@@ -4,6 +4,8 @@ storage:
   directories:
     - path: "/opt/systemd"
       mode: 0755
+    - path: "/root/.secret"
+      mode: 0750
   files:
     - path: /usr/local/bin/create-coreos-env.sh
       mode: 0750

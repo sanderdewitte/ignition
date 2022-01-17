@@ -29,6 +29,10 @@ storage:
         inline: |
           [Service]
           Environment="SERVER_DOMAIN_NAME=sanderdewitte.com"
+    - path: /root/.secret/vultr_api.key
+      mode: 0640
+      contents:
+        local: files/vultr_api.key
     - path: /etc/zincati/config.d/51-rollout-wariness.toml
       contents:
         inline: |
