@@ -35,7 +35,7 @@ storage:
                 - 'traefik.http.services.netdata.loadbalancer.server.port=19999'
                 - 'traefik.http.routers.netdata.rule=Host(`netdata.${SERVER_DOMAIN_NAME}`)'
                 - 'traefik.http.routers.netdata.entrypoints=websecure'
-                - 'traefik.http.routers.netdata.tls.certresolver=le'
+                - 'traefik.http.routers.netdata.tls.certresolver=letsencryptresolver'
               networks:
                 - traefik
           volumes:

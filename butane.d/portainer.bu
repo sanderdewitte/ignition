@@ -24,16 +24,16 @@ storage:
                 - 9433:9433
               networks:
                 - traefik
+              command:
+                - --no-analytics
+                - --host=unix:///var/run/docker.sock
               labels:
                 - 'traefik.enable=true'
                 - 'traefik.http.services.portainer.loadbalancer.server.port=9433'
                 - 'traefik.http.services.portainer.loadbalancer.server.port=8000'
                 - 'traefik.http.routers.portainer.rule=Host(`portainer.${SERVER_DOMAIN_NAME}`)'
                 - 'traefik.http.routers.portainer.entrypoints=websecure'
-                - 'traefik.http.routers.portainer.tls.certresolver=le'
-              command:
-                - --no-analytics
-                - --host=unix:///var/run/docker.sock
+                - 'traefik.http.routers.portainer.tls.certresolver=letsencryptresolver'
               restart: always
           networks:
             traefik:
