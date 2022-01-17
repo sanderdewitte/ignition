@@ -1,6 +1,6 @@
 # Ignition
 
-Human readable Butane Configs that can be translated into machine readable Ignition Configs using make and the coreos/butane Docker container. In addition, the mikefarah/yq YAML processor Docker container is used for merging specified Butane Configs into one before translating into an Ignition Config.
+Human readable Butane Configs that can be translated into machine readable Ignition Configs using make and the coreos/butane Docker container. In addition, the mikefarah/yq YAML processor Docker container is used for merging specific Butane Configs before translating into an Ignition Config.
 
 ## Requirements
 - make (tested with GNU Make 4.2.1)
