@@ -29,6 +29,12 @@ storage:
         inline: |
           [Service]
           Environment="SERVER_DOMAIN_NAME=sanderdewitte.com"
+    - path: /etc/systemd/system/coreos-env.service.d/vultr_api_key_file.conf
+      mode: 0644
+      contents:
+        inline: |
+          [Service]
+          Environment="VULTR_API_KEY_FILE=/root/.secret/vultr_api.key"
     - path: /root/.secret/vultr_api.key
       mode: 0640
       contents:

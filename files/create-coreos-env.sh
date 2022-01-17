@@ -8,7 +8,7 @@ DOCKER_GROUP_ID=$(getent group docker | cut -d ':' -f 3)
 SERVER_DOMAIN_NAME=${SERVER_DOMAIN_NAME}
 
 # Vultr API key file location (used by traefik container)
-VULTR_API_KEY_FILE=/root/.secret/vultr_api.key
+VULTR_API_KEY_FILE=${VULTR_API_KEY_FILE}
 EOF
 
 if [ ! -f /etc/sysconfig/coreos-env ]; then
