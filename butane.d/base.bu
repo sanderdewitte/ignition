@@ -4,13 +4,11 @@ storage:
   directories:
     - path: "/opt/systemd"
       mode: 0755
-    - path: "/opt/bootstrap"
-      mode: 0755 
   files:
-    - path: /opt/bootstrap/coreos-env.sh
-      mode: 0755
+    - path: /usr/local/bin/create-coreos-env.sh
+      mode: 0750
       contents:
-        local: files/coreos-env.sh
+        local: files/create-coreos-env.sh
     - path: /etc/profile.d/systemd-pager.sh
       mode: 0644
       overwrite: true
