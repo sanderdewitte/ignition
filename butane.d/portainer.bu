@@ -28,9 +28,9 @@ storage:
                 - 'traefik.enable=true'
                 - 'traefik.http.services.portainer.loadbalancer.server.port=9433'
                 - 'traefik.http.services.portainer.loadbalancer.server.port=8000'
-                - 'traefik.http.routers.portainer.rule=Host(`portainer.localhost`)'
+                - 'traefik.http.routers.portainer.rule=Host(`portainer.${SERVER_DOMAIN_NAME}`)'
                 - 'traefik.http.routers.portainer.entrypoints=websecure'
-                - 'traefik.http.routers.portainer.tls.certresolver=mydnschallenge'
+                - 'traefik.http.routers.portainer.tls.certresolver=le'
               command:
                 - --no-analytics
                 - --host=unix:///var/run/docker.sock
@@ -54,6 +54,7 @@ systemd:
       [Service]
       Type=oneshot
       TimeoutStartSec=0
+      EnvironmentFile=-/etc/sysconfig/coreos-env
       WorkingDirectory=/opt/systemd/portainer/
       ExecStartPre=-/usr/bin/timeout 2m /usr/bin/bash -c "while [ ! -x /usr/bin/docker-compose ]; do sleep 1; done"
       ExecStartPre=-/usr/bin/timeout 1m /usr/bin/bash -c "while [ ! -x \"$(find /usr/lib64 -name 'libpython3*.so.*' | head -1)\" ]; do sleep 1; done"

@@ -33,9 +33,9 @@ storage:
               labels:
                 - 'traefik.enable=true'
                 - 'traefik.http.services.netdata.loadbalancer.server.port=19999'
-                - 'traefik.http.routers.netdata.rule=Host(`netdata.localhost`)'
+                - 'traefik.http.routers.netdata.rule=Host(`netdata.${SERVER_DOMAIN_NAME}`)'
                 - 'traefik.http.routers.netdata.entrypoints=websecure'
-                - 'traefik.http.routers.netdata.tls.certresolver=mydnschallenge'
+                - 'traefik.http.routers.netdata.tls.certresolver=le'
               networks:
                 - traefik
           volumes:
@@ -58,6 +58,7 @@ systemd:
       [Service]
       Type=oneshot
       TimeoutStartSec=0
+      EnvironmentFile=-/etc/sysconfig/coreos-env
       WorkingDirectory=/opt/systemd/netdata/
       ExecStartPre=-/usr/bin/timeout 2m /usr/bin/bash -c "while [ ! -x /usr/bin/docker-compose ]; do sleep 1; done"
       ExecStartPre=-/usr/bin/timeout 1m /usr/bin/bash -c "while [ ! -x \"$(find /usr/lib64 -name 'libpython3*.so.*' | head -1)\" ]; do sleep 1; done"

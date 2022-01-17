@@ -17,7 +17,7 @@ storage:
               privileged: true
               volumes:
                 - '/var/run/docker.sock:/var/run/docker.sock:ro'
-                - '/opt/mediadepot/traefik/letsencrypt:/letsencrypt'
+                - '/etc/pki/tls/misc/traefik/letsencrypt:/letsencrypt'
               ports:
                 - 80:80
                 - 443:443
@@ -63,6 +63,7 @@ systemd:
       [Service]
       Type=oneshot
       TimeoutStartSec=0
+      EnvironmentFile=-/etc/sysconfig/coreos-env
       WorkingDirectory=/opt/systemd/traefik/
       ExecStartPre=-/usr/bin/timeout 2m /usr/bin/bash -c "while [ ! -x /usr/bin/docker-compose ]; do sleep 1; done"
       ExecStartPre=-/usr/bin/timeout 1m /usr/bin/bash -c "while [ ! -x \"$(find /usr/lib64 -name 'libpython3*.so.*' | head -1)\" ]; do sleep 1; done"
