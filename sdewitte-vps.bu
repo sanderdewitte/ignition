@@ -23,7 +23,7 @@ storage:
       contents:
         inline: |
           sdewitte-vps
-    - path: /etc/systemd/system/coreos-env.service.d/domain.conf"
+    - path: /etc/systemd/system/coreos-env.service.d/domain.conf
       mode: 0644
       contents:
         inline: |
