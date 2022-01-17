@@ -19,7 +19,7 @@ IGNITION := $(BUTANE:.bu=.ign)
 all: ignition
 
 generate-butane:
-	mkdir -p ${TEMP_DIR}
+	mkdir -p ${TEMP_DIR} && ln -s ../files ${TEMP_DIR}/files
 	${DOCKER} run --rm \
 		--volume ${PWD}:/workdir:Z \
 		${YAML_PROCESSOR_IMAGE} \

@@ -10,7 +10,7 @@ storage:
     - path: /opt/bootstrap/coreos-env.sh
       mode: 0755
       contents:
-        local: coreos-env.sh
+        local: files/coreos-env.sh
     - path: /etc/profile.d/systemd-pager.sh
       mode: 0644
       overwrite: true
