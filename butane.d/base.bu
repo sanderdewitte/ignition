@@ -4,8 +4,6 @@ storage:
   directories:
     - path: "/opt/systemd"
       mode: 0755
-    - path: "/root/.secret"
-      mode: 0750
   files:
     - path: /usr/local/bin/create-coreos-env.sh
       mode: 0750
@@ -66,8 +64,8 @@ systemd:
 
         [Service]
         Type=oneshot
+        RemainAfterExit=true
         ExecStart=/usr/local/bin/create-coreos-env.sh
-        RemainAfterExit=yes
         StandardOutput=journal
 
         [Install]
@@ -86,9 +84,10 @@ systemd:
 
         [Service]
         Type=oneshot
+        RemainAfterExit=true
         ExecStart=/usr/bin/rpm-ostree install --apply-live --allow-inactive --idempotent vim docker-compose
         ExecStart=/bin/touch /var/lib/%N.stamp
-        RemainAfterExit=yes
+        RemainAfterExit=true
 
         [Install]
         WantedBy=multi-user.target
