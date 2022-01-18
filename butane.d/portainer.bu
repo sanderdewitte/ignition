@@ -12,31 +12,34 @@ storage:
           version: '3.9'
           services:
             portainer:
-              image: portainer/portainer-ce:alpine
+              image: portainer/portainer-ce
               container_name: portainer
               security_opt:
                 - label:disable
               volumes:
-                - 'portainer_data:/data'
-                - '/var/run/docker.sock:/var/run/docker.sock'
-              ports:
-                - 8000:8000
-                - 9433:9433
+                - "portainer_data:/data"
+                - "/var/run/docker.sock:/var/run/docker.sock"
               networks:
                 - traefik
               command:
-                - --no-analytics
-                - --host=unix:///var/run/docker.sock
+                - "--no-analytics"
+                - "--host=unix:///var/run/docker.sock"
               labels:
-                - 'traefik.enable=true'
-                - 'traefik.http.services.portainer.loadbalancer.server.port=9433'
-                - 'traefik.http.services.portainer.loadbalancer.server.port=8000'
-                - 'traefik.http.routers.portainer.rule=Host(`portainer.${SERVER_DOMAIN_NAME}`)'
-                - 'traefik.http.routers.portainer.entrypoints=websecure'
-                - 'traefik.http.routers.portainer.tls.certresolver=letsencryptresolver'
+                - "traefik.enable=true"
+                - "traefik.http.routers.portainerfrontend.service=portainerfrontend"
+                - "traefik.http.routers.portainerfrontend.rule=Host(`portainer.${SERVER_DOMAIN_NAME}`)"
+                - "traefik.http.routers.portainerfrontend.entrypoints=websecure"
+                - "traefik.http.routers.portainerfrontend.tls.certresolver=letsencryptresolver"
+                - "traefik.http.services.portainerfrontend.loadbalancer.server.port=9000"
+                - "traefik.http.routers.portaineredge.service=portaineredge"
+                - "traefik.http.routers.portaineredge.rule=Host(`edge.${SERVER_DOMAIN_NAME}`)"
+                - "traefik.http.routers.portaineredge.entrypoints=websecure"
+                - "traefik.http.routers.portaineredge.tls.certresolver=letsencryptresolver"
+                - "traefik.http.services.portaineredge.loadbalancer.server.port=8000"
               restart: always
           networks:
             traefik:
+              name: backend
               external: true
           volumes:
             portainer_data:
@@ -54,6 +57,7 @@ systemd:
       [Service]
       Type=oneshot
       TimeoutStartSec=0
+      RemainAfterExit=true
       EnvironmentFile=-/etc/sysconfig/coreos-env
       WorkingDirectory=/opt/systemd/portainer/
       ExecStartPre=-/usr/bin/timeout 2m /usr/bin/bash -c "while [ ! -x /usr/bin/docker-compose ]; do sleep 1; done"
@@ -61,7 +65,7 @@ systemd:
       ExecStartPre=-/usr/bin/docker-compose down -v
       ExecStartPre=-/usr/bin/docker-compose rm -v
       ExecStartPre=-/usr/bin/docker-compose pull
-      ExecStart=/usr/bin/docker-compose up
+      ExecStart=/usr/bin/docker-compose up -d
       ExecStop=/usr/bin/docker-compose down -v
 
       [Install]
