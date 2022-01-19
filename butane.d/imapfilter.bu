@@ -1,0 +1,86 @@
+variant: fcos
+version: 1.4.0
+storage:
+  directories:
+    - path: "/opt/systemd/imapfilter"
+      mode: 0755
+    - path: "/opt/systemd/imapfilter/secrets"
+      mode: 0750
+    - path: "/var/log/imapfilter"
+      mode: 0750
+  files:
+    - path: "/opt/systemd/imapfilter/secrets/sanderdewitte_com.secret"
+      mode: 0640
+      contents:
+        local: files/sanderdewitte_com.secret
+    - path: "/opt/systemd/imapfilter/secrets/git_user.secret"
+      mode: 0640
+      contents:
+        local: files/git_user.secret
+    - path: "/opt/systemd/imapfilter/secrets/git_token.secret"
+      mode: 0640
+      contents:
+        local: files/git_token.secret
+    - path: "/opt/systemd/imapfilter/secrets/git_target.secret"
+      mode: 0640
+      contents:
+        local: files/git_target.secret
+    - path: "/opt/systemd/imapfilter/docker-compose.yml"
+      mode: 0644
+      contents:
+        inline: |-
+          version: '3.9'
+          services:
+            sanderdewitte.com:
+              image: ntnn/imapfilter
+              container_name: imapfilter-sanderdewitte.com
+              volumes:
+                - "/var/run/docker.sock:/var/run/docker.sock:ro"
+                - "/var/log/imapfilter/sanderdewitte.com.log:/var/log/imapfilter.log"
+              secrets:
+                - "sanderdewitte_com"
+                - "git_user"
+                - "git_token"
+                - "git_target"
+              environment:
+                - "GIT_TARGET=$(/usr/bin/cat /run/secrets/git_target)"
+                - "GIT_USER=$(/usr/bin/cat /run/secrets/git_user)"
+                - "GIT_TOKEN=$(/usr/bin/cat /run/secrets/git_token)"
+                - "IMAPFILTER_CONFIG=entry_sanderdewitte.com.lua"
+                - "IMAPFILTER_LOGFILE=/var/log/imapfilter.log"
+                - "IMAPFILTER_DAEMON=yes"
+          secrets:
+            sanderdewitte_com:
+              file: "./secrets/sanderdewitte_com.secret"
+            git_target:
+              file: "./secrets/git_target.secret"
+            git_user:
+              file: "./secrets/git_user.secret"
+            git_token:
+              file: "./secrets/git_token.secret"
+systemd:
+  units:
+  - name: docker.imapfilter.service
+    enabled: true
+    contents: |-
+      [Unit]
+      Description=Imapfilter Container
+      After=network-online.target docker.service docker.traefik.service
+      Requires=network.target network-online.target docker.service docker.traefik.service
+      
+      [Service]
+      Type=oneshot
+      TimeoutStartSec=0
+      RemainAfterExit=true
+      EnvironmentFile=-/etc/sysconfig/coreos-env
+      WorkingDirectory=/opt/systemd/imapfilter/
+      ExecStartPre=-/usr/bin/timeout 2m /usr/bin/bash -c "while [ ! -x /usr/bin/docker-compose ]; do sleep 1; done"
+      ExecStartPre=-/usr/bin/timeout 1m /usr/bin/bash -c "while [ ! -x \"$(find /usr/lib64 -name 'libpython3*.so.*' | head -1)\" ]; do sleep 1; done"
+      ExecStartPre=-/usr/bin/docker-compose down -v
+      ExecStartPre=-/usr/bin/docker-compose rm -v
+      ExecStartPre=-/usr/bin/docker-compose pull
+      ExecStart=/usr/bin/docker-compose up -d
+      ExecStop=/usr/bin/docker-compose down -v
+      
+      [Install]
+      WantedBy=multi-user.target
