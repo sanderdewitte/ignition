@@ -13,18 +13,14 @@ storage:
       mode: 0640
       contents:
         local: files/sanderdewitte_com.secret
-    - path: "/opt/systemd/imapfilter/secrets/git_user.secret"
-      mode: 0640
-      contents:
-        local: files/git_user.secret
     - path: "/opt/systemd/imapfilter/secrets/git_token.secret"
       mode: 0640
       contents:
         local: files/git_token.secret
-    - path: "/opt/systemd/imapfilter/secrets/git_target.secret"
+    - path: "/opt/systemd/imapfilter/.env"
       mode: 0640
       contents:
-        local: files/git_target.secret
+        local: files/imapfilter.env
     - path: "/opt/systemd/imapfilter/docker-compose.yml"
       mode: 0644
       contents:
@@ -39,27 +35,22 @@ storage:
                 - "/var/log/imapfilter/sanderdewitte.com.log:/var/log/imapfilter.log"
               secrets:
                 - "sanderdewitte_com"
-                - "git_user"
                 - "git_token"
-                - "git_target"
               environment:
                 - "PUID=${CORE_USER_ID}"
                 - "PGID=${DOCKER_GROUP_ID}"
                 - "TZ=${TZ}"
-                - "GIT_TARGET=$(/usr/bin/cat /run/secrets/git_target)"
-                - "GIT_USER=$(/usr/bin/cat /run/secrets/git_user)"
+                - "GIT_TARGET=${GIT_TARGET}"
+                - "GIT_USER=${GIT_USER}"
                 - "GIT_TOKEN=/run/secrets/git_token"
                 - "IMAPFILTER_CONFIG=entry_sanderdewitte.com.lua"
                 - "IMAPFILTER_LOGFILE=/var/log/imapfilter.log"
                 - "IMAPFILTER_DAEMON=yes"
+                - "IMAPFILTER_SLEEP=900"
               restart: unless-stopped
           secrets:
-            sanderdewitte_com:
+            sanderdewitte_com_pwd:
               file: "./secrets/sanderdewitte_com.secret"
-            git_target:
-              file: "./secrets/git_target.secret"
-            git_user:
-              file: "./secrets/git_user.secret"
             git_token:
               file: "./secrets/git_token.secret"
 systemd:
