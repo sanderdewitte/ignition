@@ -26,17 +26,17 @@ storage:
                 - "/proc:/host/proc:ro"
                 - "/sys:/host/sys:ro"
                 - "/var/run/docker.sock:/var/run/docker.sock:ro"
+              labels:
+                - "traefik.enable=true"
+                - "traefik.http.routers.netdata.service=netdata"
+                - "traefik.http.routers.netdata.rule=Host(`monitor.${SERVER_DOMAIN_NAME}`)"
+                - "traefik.http.routers.netdata.entrypoints=websecure"
+                - "traefik.http.routers.netdata.tls.certresolver=letsencryptresolver"
+                - "traefik.http.services.netdata.loadbalancer.server.port=19999"
               environment:
                 - "PUID=${CORE_USER_ID}"
                 - "PGID=${DOCKER_GROUP_ID}"
                 - "TZ=${TZ}"
-              labels:
-                - "traefik.enable=true"
-                - "traefik.http.routers.netdata.service=netdata"
-                - "traefik.http.routers.netdata.rule=Host(`netdata.${SERVER_DOMAIN_NAME}`)"
-                - "traefik.http.routers.netdata.entrypoints=websecure"
-                - "traefik.http.routers.netdata.tls.certresolver=letsencryptresolver"
-                - "traefik.http.services.netdata.loadbalancer.server.port=19999"
               networks:
                 - traefik
               restart: unless-stopped
