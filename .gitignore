@@ -1,4 +1,5 @@
 *.ign
 *.tmp
 *.key
+*.env
 *.secret
