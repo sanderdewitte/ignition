@@ -29,7 +29,7 @@ storage:
               environment:
                 - "PUID=${CORE_USER_ID}"
                 - "PGID=${DOCKER_GROUP_ID}"
-                - "TZ=Europe/Amsterdam"
+                - "TZ=${TZ}"
               labels:
                 - "traefik.enable=true"
                 - "traefik.http.routers.netdata.service=netdata"
