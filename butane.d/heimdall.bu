@@ -21,9 +21,9 @@ storage:
                 - "traefik.enable=true"
                 - "traefik.http.routers.heimdall.service=heimdall"
                 - "traefik.http.routers.heimdall.rule=Host(`www.${SERVER_DOMAIN_NAME}`)"
-                - "traefik.http.routers.netdata.entrypoints=websecure"
-                - "traefik.http.routers.netdata.tls.certresolver=letsencryptresolver"
-                - "traefik.http.services.netdata.loadbalancer.server.port=443"
+                - "traefik.http.routers.heimdall.entrypoints=websecure"
+                - "traefik.http.routers.heimdall.tls.certresolver=letsencryptresolver"
+                - "traefik.http.services.heimdall.loadbalancer.server.port=443"
               environment:
                 - "PUID=${CORE_USER_ID}"
                 - "PGID=${DOCKER_GROUP_ID}"
