@@ -39,8 +39,11 @@ storage:
                 - traefik
           volumes:
             netdataconfig:
+              external: false
             netdatalib:
+              external: false
             netdatacache:
+              external: false
           networks:
             traefik:
               name: backend
