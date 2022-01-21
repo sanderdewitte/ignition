@@ -43,12 +43,16 @@ storage:
                 - "git_token"
                 - "git_target"
               environment:
+                - "PUID=${CORE_USER_ID}"
+                - "PGID=${DOCKER_GROUP_ID}"
+                - "TZ=${TZ}"
                 - "GIT_TARGET=$(/usr/bin/cat /run/secrets/git_target)"
                 - "GIT_USER=$(/usr/bin/cat /run/secrets/git_user)"
-                - "GIT_TOKEN=$(/usr/bin/cat /run/secrets/git_token)"
+                - "GIT_TOKEN=/run/secrets/git_token"
                 - "IMAPFILTER_CONFIG=entry_sanderdewitte.com.lua"
                 - "IMAPFILTER_LOGFILE=/var/log/imapfilter.log"
                 - "IMAPFILTER_DAEMON=yes"
+              restart: unless-stopped
           secrets:
             sanderdewitte_com:
               file: "./secrets/sanderdewitte_com.secret"
