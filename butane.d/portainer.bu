@@ -19,19 +19,13 @@ storage:
               volumes:
                 - "portainer_data:/data"
                 - "/var/run/docker.sock:/var/run/docker.sock"
-              environment:
-                - "PUID=${CORE_USER_ID}"
-                - "PGID=${DOCKER_GROUP_ID}"
-                - "TZ=${TZ}"
-              networks:
-                - traefik
               command:
                 - "--no-analytics"
                 - "--host=unix:///var/run/docker.sock"
               labels:
                 - "traefik.enable=true"
                 - "traefik.http.routers.portainerfrontend.service=portainerfrontend"
-                - "traefik.http.routers.portainerfrontend.rule=Host(`portainer.${SERVER_DOMAIN_NAME}`)"
+                - "traefik.http.routers.portainerfrontend.rule=Host(`containerman.${SERVER_DOMAIN_NAME}`)"
                 - "traefik.http.routers.portainerfrontend.entrypoints=websecure"
                 - "traefik.http.routers.portainerfrontend.tls.certresolver=letsencryptresolver"
                 - "traefik.http.services.portainerfrontend.loadbalancer.server.port=9000"
@@ -40,6 +34,12 @@ storage:
                 - "traefik.http.routers.portaineredge.entrypoints=websecure"
                 - "traefik.http.routers.portaineredge.tls.certresolver=letsencryptresolver"
                 - "traefik.http.services.portaineredge.loadbalancer.server.port=8000"
+              environment:
+                - "PUID=${CORE_USER_ID}"
+                - "PGID=${DOCKER_GROUP_ID}"
+                - "TZ=${TZ}"
+              networks:
+                - traefik
               restart: unless-stopped
           networks:
             traefik:
