@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 cat >/etc/sysconfig/coreos-env <<EOF
-
 # Core user ID
 CORE_USER_ID=$(getent passwd core | cut -d ':' -f 3)
 
