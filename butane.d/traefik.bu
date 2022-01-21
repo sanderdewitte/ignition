@@ -59,6 +59,7 @@ storage:
                 - "VULTR_HTTP_TIMEOUT=3600"
               networks:
                 - traefik
+              restart: unless-stopped
           secrets:
             vultr_api_key:
               file: "./secrets/vultr_api_key.secret"
