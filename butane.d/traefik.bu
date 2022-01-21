@@ -48,7 +48,7 @@ storage:
                 - "traefik.http.routers.https-redirect.rule=HostRegexp(`{host:.+}`)"
                 - "traefik.http.routers.https-redirect.middlewares=redirect-to-https"
                 - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
-                - "traefik.http.routers.traefik.rule=Host(`traefik.${SERVER_DOMAIN_NAME}`)"
+                - "traefik.http.routers.traefik.rule=Host(`router.${SERVER_DOMAIN_NAME}`)"
                 - "traefik.http.routers.traefik.entrypoints=websecure"
                 - "traefik.http.routers.traefik.service=api@internal"
                 - "traefik.http.routers.traefik.tls.certresolver=letsencryptresolver"
