@@ -37,6 +37,7 @@ storage:
                 - "traefik.http.services.netdata.loadbalancer.server.port=19999"
               networks:
                 - traefik
+              restart: unless-stopped
           volumes:
             netdataconfig:
               external: false
