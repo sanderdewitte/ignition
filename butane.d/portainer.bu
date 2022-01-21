@@ -36,7 +36,7 @@ storage:
                 - "traefik.http.routers.portaineredge.entrypoints=websecure"
                 - "traefik.http.routers.portaineredge.tls.certresolver=letsencryptresolver"
                 - "traefik.http.services.portaineredge.loadbalancer.server.port=8000"
-              restart: always
+              restart: unless-stopped
           networks:
             traefik:
               name: backend
