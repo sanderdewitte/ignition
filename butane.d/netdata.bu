@@ -27,7 +27,9 @@ storage:
                 - "/sys:/host/sys:ro"
                 - "/var/run/docker.sock:/var/run/docker.sock:ro"
               environment:
+                - "PUID=${CORE_USER_ID}"
                 - "PGID=${DOCKER_GROUP_ID}"
+                - "TZ=Europe/Amsterdam"
               labels:
                 - "traefik.enable=true"
                 - "traefik.http.routers.netdata.service=netdata"
