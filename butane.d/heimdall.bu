@@ -15,7 +15,7 @@ storage:
               image: lscr.io/linuxserver/heimdall
               container_name: heimdall
               volumes:
-                - "heimdallconfig:/config"
+                - "config:/config"
                 - "/var/run/docker.sock:/var/run/docker.sock:ro" 
               labels:
                 - "traefik.enable=true"
@@ -32,7 +32,7 @@ storage:
                 - traefik
               restart: unless-stopped
           volumes:
-            heimdallconfig:
+            config:
               external: false
           networks:
             traefik:

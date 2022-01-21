@@ -17,7 +17,7 @@ storage:
               security_opt:
                 - label:disable
               volumes:
-                - "portainer_data:/data"
+                - "data:/data"
                 - "/var/run/docker.sock:/var/run/docker.sock"
               command:
                 - "--no-analytics"
@@ -46,7 +46,7 @@ storage:
               name: backend
               external: true
           volumes:
-            portainer_data:
+            data:
               external: false
 systemd:
   units:

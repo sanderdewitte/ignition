@@ -20,9 +20,9 @@ storage:
                 - seccomp:unconfined
                 - apparmor:unconfined
               volumes:
-                - "netdata_config:/etc/netdata"
-                - "netdata_lib:/var/lib/netdata"
-                - "netdata_cache:/var/cache/netdata"
+                - "config:/etc/netdata"
+                - "lib:/var/lib/netdata"
+                - "cache:/var/cache/netdata"
                 - "/proc:/host/proc:ro"
                 - "/sys:/host/sys:ro"
                 - "/var/run/docker.sock:/var/run/docker.sock:ro"
@@ -41,11 +41,11 @@ storage:
                 - traefik
               restart: unless-stopped
           volumes:
-            netdata_config:
+            config:
               external: false
-            netdata_lib:
+            lib:
               external: false
-            netdata_cache:
+            cache:
               external: false
           networks:
             traefik:
