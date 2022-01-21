@@ -34,7 +34,7 @@ storage:
                 - "/var/run/docker.sock:/var/run/docker.sock:ro"
                 - "/var/log/imapfilter/sanderdewitte.com.log:/var/log/imapfilter.log"
               secrets:
-                - "sanderdewitte_com"
+                - "sanderdewitte_com_pwd"
                 - "git_token"
               environment:
                 - "PUID=${CORE_USER_ID}"
