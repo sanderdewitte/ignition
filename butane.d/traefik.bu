@@ -55,6 +55,9 @@ storage:
               secrets:
                 - "vultr_api_key"
               environment:
+                - "PUID=${CORE_USER_ID}"
+                - "PGID=${DOCKER_GROUP_ID}"
+                - "TZ=${TZ}"
                 - "VULTR_API_KEY_FILE=/run/secrets/vultr_api_key"
                 - "VULTR_HTTP_TIMEOUT=3600"
               networks:
