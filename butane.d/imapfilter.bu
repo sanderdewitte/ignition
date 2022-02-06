@@ -11,10 +11,30 @@ storage:
   files:
     - path: "/var/log/imapfilter/sanderdewitte_com.log"
       mode: 0640
+    - path: "/var/log/imapfilter/mnqmusic_com.log"
+      mode: 0640
+    - path: "/var/log/imapfilter/mnqphotography_com.log"
+      mode: 0640
     - path: "/opt/systemd/imapfilter/secrets/sanderdewitte_com.secret"
       mode: 0440
       contents:
         local: files/sanderdewitte_com.secret
+      user:
+        name: root
+      group:
+        name: docker
+    - path: "/opt/systemd/imapfilter/secrets/mnqmusic_com.secret"
+      mode: 0440
+      contents:
+        local: files/mnqmusic_com.secret
+      user:
+        name: root
+      group:
+        name: docker
+    - path: "/opt/systemd/imapfilter/secrets/mnqphotography_com.secret"
+      mode: 0440
+      contents:
+        local: files/mnqphotography_com.secret
       user:
         name: root
       group:
@@ -61,8 +81,60 @@ storage:
               networks:
                 - imapfilter
               restart: unless-stopped
+            mnqmusic.com:
+              image: ntnn/imapfilter
+              privileged: true
+              container_name: imapfilter-mnqmusic.com
+              volumes:
+                - "/var/run/docker.sock:/var/run/docker.sock:ro"
+                - "/var/log/imapfilter/mnqmusic_com.log:/var/log/imapfilter.log"
+              secrets:
+                - "mnqmusic_com_pwd"
+                - "git_token"
+              environment:
+                - "PUID=${CORE_USER_ID}"
+                - "PGID=${DOCKER_GROUP_ID}"
+                - "TZ=${TZ}"
+                - "GIT_TARGET=${IMAPFILTER_CONFIG_GIT_TARGET}"
+                - "GIT_USER=${IMAPFILTER_CONFIG_GIT_USER}"
+                - "GIT_TOKEN=/run/secrets/git_token"
+                - "IMAPFILTER_CONFIG=entry_mnqmusic.com.lua"
+                - "IMAPFILTER_LOGFILE=/var/log/imapfilter.log"
+                - "IMAPFILTER_DAEMON=yes"
+                - "IMAPFILTER_SLEEP=600"
+              networks:
+                - imapfilter
+              restart: unless-stopped
+            mnqphotography.com:
+              image: ntnn/imapfilter
+              privileged: true
+              container_name: imapfilter-mnqphotography.com
+              volumes:
+                - "/var/run/docker.sock:/var/run/docker.sock:ro"
+                - "/var/log/imapfilter/mnqphotography_com.log:/var/log/imapfilter.log"
+              secrets:
+                - "mnqphotography_com_pwd"
+                - "git_token"
+              environment:
+                - "PUID=${CORE_USER_ID}"
+                - "PGID=${DOCKER_GROUP_ID}"
+                - "TZ=${TZ}"
+                - "GIT_TARGET=${IMAPFILTER_CONFIG_GIT_TARGET}"
+                - "GIT_USER=${IMAPFILTER_CONFIG_GIT_USER}"
+                - "GIT_TOKEN=/run/secrets/git_token"
+                - "IMAPFILTER_CONFIG=entry_mnqphotography.com.lua"
+                - "IMAPFILTER_LOGFILE=/var/log/imapfilter.log"
+                - "IMAPFILTER_DAEMON=yes"
+                - "IMAPFILTER_SLEEP=1800"
+              networks:
+                - imapfilter
+              restart: unless-stopped
           secrets:
             sanderdewitte_com_pwd:
+              file: "./secrets/sanderdewitte_com.secret"
+            mnqmusic_com_pwd:
+              file: "./secrets/sanderdewitte_com.secret"
+            mnqphotography_com_pwd:
               file: "./secrets/sanderdewitte_com.secret"
             git_token:
               file: "./secrets/git_token.secret"
