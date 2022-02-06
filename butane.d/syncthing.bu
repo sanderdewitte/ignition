@@ -1,0 +1,70 @@
+variant: fcos
+version: 1.4.0
+storage:
+  directories:
+    - path: "/opt/systemd/syncthing"
+      mode: 0755
+  files:
+    - path: "/opt/systemd/syncthing/docker-compose.yml"
+      mode: 0644
+      contents:
+        inline: |-
+          version: '3.9'
+          services:
+            syncthing:
+              image: syncthing/syncthing
+              container_name: syncthing
+              hostname: sync.${SERVER_DOMAIN_NAME}
+              volumes:
+                - "config:/var/syncthing/config"
+                - "data:/var/syncthing"
+                - "/var/run/docker.sock:/var/run/docker.sock:ro"
+              labels:
+                - "traefik.enable=true"
+                - "traefik.http.routers.syncthing.service=syncthing"
+                - "traefik.http.routers.syncthing.rule=Host(`sync.${SERVER_DOMAIN_NAME}`)"
+                - "traefik.http.routers.syncthing.entrypoints=websecure"
+                - "traefik.http.routers.syncthing.tls.certresolver=letsencryptresolver"
+                - "traefik.http.services.syncthing.loadbalancer.server.port=8384"
+              environment:
+                - "PUID=${CORE_USER_ID}"
+                - "PGID=${DOCKER_GROUP_ID}"
+                - "TZ=${TZ}"
+              networks:
+                - traefik
+              restart: unless-stopped
+          volumes:
+            config:
+              external: false
+            data:
+              external: false
+          networks:
+            traefik:
+              name: backend
+              external: true
+systemd:
+  units:
+  - name: docker.syncthing.service
+    enabled: true
+    contents: |-
+      [Unit]
+      Description=Syncthing Container
+      After=network-online.target docker.service docker.traefik.service
+      Requires=network.target network-online.target docker.service docker.traefik.service
+      
+      [Service]
+      Type=oneshot
+      TimeoutStartSec=0
+      RemainAfterExit=true
+      EnvironmentFile=-/etc/sysconfig/coreos-env
+      WorkingDirectory=/opt/systemd/syncthing/
+      ExecStartPre=-/usr/bin/timeout 2m /usr/bin/bash -c "while [ ! -x /usr/bin/docker-compose ]; do sleep 1; done"
+      ExecStartPre=-/usr/bin/timeout 1m /usr/bin/bash -c "while [ ! -x \"$(find /usr/lib64 -name 'libpython3*.so.*' | head -1)\" ]; do sleep 1; done"
+      ExecStartPre=-/usr/bin/docker-compose down -v
+      ExecStartPre=-/usr/bin/docker-compose rm -v
+      ExecStartPre=-/usr/bin/docker-compose pull
+      ExecStart=/usr/bin/docker-compose up -d
+      ExecStop=/usr/bin/docker-compose down -v
+      
+      [Install]
+      WantedBy=multi-user.target

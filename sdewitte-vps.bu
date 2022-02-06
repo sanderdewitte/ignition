@@ -8,6 +8,7 @@ ignition:
       - source: https://sanderdewitte.github.io/ignition/butane.d/heimdall.bu
       - source: https://sanderdewitte.github.io/ignition/butane.d/portainer.bu
       - source: https://sanderdewitte.github.io/ignition/butane.d/netdata.bu
+      - source: https://sanderdewitte.github.io/ignition/butane.d/syncthing.bu
       - source: https://sanderdewitte.github.io/ignition/butane.d/imapfilter.bu
   timeouts:
     http_response_headers: 6
