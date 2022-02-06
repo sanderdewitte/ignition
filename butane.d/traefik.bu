@@ -8,9 +8,13 @@ storage:
       mode: 0750
   files:
     - path: "/opt/systemd/traefik/secrets/vultr_api_key.secret"
-      mode: 0640
+      mode: 0440
       contents:
         local: files/vultr_api.key
+      user:
+        name: root
+      group:
+        name: docker
     - path: "/opt/systemd/traefik/docker-compose.yml"
       mode: 0644
       contents:
