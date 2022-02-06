@@ -133,9 +133,9 @@ storage:
             sanderdewitte_com_pwd:
               file: "./secrets/sanderdewitte_com.secret"
             mnqmusic_com_pwd:
-              file: "./secrets/sanderdewitte_com.secret"
+              file: "./secrets/mnqmusic_com.secret"
             mnqphotography_com_pwd:
-              file: "./secrets/sanderdewitte_com.secret"
+              file: "./secrets/mnqphotography_com.secret"
             git_token:
               file: "./secrets/git_token.secret"
           networks:
