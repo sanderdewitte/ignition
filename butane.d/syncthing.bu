@@ -16,7 +16,6 @@ storage:
               container_name: syncthing
               hostname: sync.${SERVER_DOMAIN_NAME}
               volumes:
-                - "config:/var/syncthing/config"
                 - "data:/var/syncthing"
                 - "/var/run/docker.sock:/var/run/docker.sock:ro"
               labels:
@@ -34,8 +33,6 @@ storage:
                 - traefik
               restart: unless-stopped
           volumes:
-            config:
-              external: false
             data:
               external: false
           networks:
