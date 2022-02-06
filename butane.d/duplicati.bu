@@ -1,0 +1,66 @@
+variant: fcos
+version: 1.4.0
+storage:
+  directories:
+    - path: "/opt/systemd/duplicati"
+      mode: 0755
+  files:
+    - path: "/opt/systemd/duplicati/docker-compose.yml"
+      mode: 0644
+      contents:
+        inline: |-
+          version: '3.9'
+          services:
+            duplicati:
+              image: duplicati/duplicati
+              container_name: duplicati
+              volumes:
+                - "data:/data"
+                - "/var/run/docker.sock:/var/run/docker.sock:ro"
+              labels:
+                - "traefik.enable=true"
+                - "traefik.http.routers.duplicati.service=duplicati"
+                - "traefik.http.routers.duplicati.rule=Host(`backup.${SERVER_DOMAIN_NAME}`)"
+                - "traefik.http.routers.duplicati.entrypoints=websecure"
+                - "traefik.http.routers.duplicati.tls.certresolver=letsencryptresolver"
+                - "traefik.http.services.duplicati.loadbalancer.server.port=8200"
+              environment:
+                - "PUID=${CORE_USER_ID}"
+                - "PGID=${DOCKER_GROUP_ID}"
+                - "TZ=${TZ}"
+              networks:
+                - traefik
+              restart: unless-stopped
+          volumes:
+            data:
+              external: false
+          networks:
+            traefik:
+              name: backend
+              external: true
+systemd:
+  units:
+  - name: docker.duplicati.service
+    enabled: true
+    contents: |-
+      [Unit]
+      Description=Syncthing Container
+      After=network-online.target docker.service docker.traefik.service
+      Requires=network.target network-online.target docker.service docker.traefik.service
+      
+      [Service]
+      Type=oneshot
+      TimeoutStartSec=0
+      RemainAfterExit=true
+      EnvironmentFile=-/etc/sysconfig/coreos-env
+      WorkingDirectory=/opt/systemd/duplicati/
+      ExecStartPre=-/usr/bin/timeout 2m /usr/bin/bash -c "while [ ! -x /usr/bin/docker-compose ]; do sleep 1; done"
+      ExecStartPre=-/usr/bin/timeout 1m /usr/bin/bash -c "while [ ! -x \"$(find /usr/lib64 -name 'libpython3*.so.*' | head -1)\" ]; do sleep 1; done"
+      ExecStartPre=-/usr/bin/docker-compose down -v
+      ExecStartPre=-/usr/bin/docker-compose rm -v
+      ExecStartPre=-/usr/bin/docker-compose pull
+      ExecStart=/usr/bin/docker-compose up -d
+      ExecStop=/usr/bin/docker-compose down -v
+      
+      [Install]
+      WantedBy=multi-user.target
