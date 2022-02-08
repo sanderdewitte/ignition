@@ -25,6 +25,7 @@ storage:
               image: traefik
               container_name: traefik
               privileged: true
+              user: "${CORE_USER_ID}:${DOCKER_GROUP_ID}"
               volumes:
                 - "/var/run/docker.sock:/var/run/docker.sock:ro"
                 - "/etc/pki/tls/misc/traefik/letsencrypt:/letsencrypt"
@@ -59,8 +60,6 @@ storage:
               secrets:
                 - "vultr_api_key"
               environment:
-                - "PUID=${CORE_USER_ID}"
-                - "PGID=${DOCKER_GROUP_ID}"
                 - "TZ=${TZ}"
                 - "VULTR_API_KEY_FILE=/run/secrets/vultr_api_key"
                 - "VULTR_HTTP_TIMEOUT=3600"
