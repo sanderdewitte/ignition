@@ -26,8 +26,6 @@ storage:
                 - "traefik.http.routers.syncthing.tls.certresolver=letsencryptresolver"
                 - "traefik.http.services.syncthing.loadbalancer.server.port=8384"
               environment:
-                - "PUID=${CORE_USER_ID}"
-                - "PGID=${DOCKER_GROUP_ID}"
                 - "TZ=${TZ}"
               networks:
                 - traefik
