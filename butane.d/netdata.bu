@@ -14,6 +14,7 @@ storage:
             netdata:
               image: netdata/netdata
               container_name: netdata
+              hostname: monitor.${SERVER_DOMAIN_NAME}
               cap_add:
                 - SYS_PTRACE
               security_opt:
@@ -34,8 +35,6 @@ storage:
                 - "traefik.http.routers.netdata.tls.certresolver=letsencryptresolver"
                 - "traefik.http.services.netdata.loadbalancer.server.port=19999"
               environment:
-                - "PUID=${CORE_USER_ID}"
-                - "PGID=${DOCKER_GROUP_ID}"
                 - "TZ=${TZ}"
               networks:
                 - traefik
