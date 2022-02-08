@@ -4,6 +4,12 @@ storage:
   directories:
     - path: "/opt/systemd/duplicati"
       mode: 0755
+    - path: "/var/local/data"
+      mode: 0770
+      user:
+        name: core
+      group:
+        name: docker
   files:
     - path: "/opt/systemd/duplicati/docker-compose.yml"
       mode: 0644
@@ -12,10 +18,13 @@ storage:
           version: '3.9'
           services:
             duplicati:
-              image: duplicati/duplicati
+              image: lscr.io/linuxserver/duplicati
               container_name: duplicati
+              hostname: backup.${SERVER_DOMAIN_NAME}
               volumes:
-                - "data:/data"
+                - "config:/config"
+                - "/backups:/backups"
+                - "/var/lib/docker/volumes:/source:ro"
                 - "/var/run/docker.sock:/var/run/docker.sock:ro"
               labels:
                 - "traefik.enable=true"
@@ -28,16 +37,20 @@ storage:
                 - "PUID=${CORE_USER_ID}"
                 - "PGID=${DOCKER_GROUP_ID}"
                 - "TZ=${TZ}"
+                - "CLI_ARGS='--webservice-interface=loopback'"
               networks:
                 - traefik
               restart: unless-stopped
           volumes:
-            data:
+            config:
               external: false
           networks:
             traefik:
               name: backend
               external: true
+  links:
+    - path: "/var/local/data/backups"
+      target: /backups
 systemd:
   units:
   - name: docker.duplicati.service
