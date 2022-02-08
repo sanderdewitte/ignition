@@ -4,7 +4,17 @@ storage:
   directories:
     - path: "/opt/systemd/portainer"
       mode: 0755
+    - path: "/opt/systemd/portainer/secrets"
+      mode: 0750
   files:
+    - path: "/opt/systemd/portainer/secrets/portainer_admin.secret"
+      mode: 0440
+      contents:
+        local: files/portainer_admin.secret
+      user:
+        name: root
+      group:
+        name: docker
     - path: "/opt/systemd/portainer/docker-compose.yml"
       mode: 0644
       contents:
@@ -19,8 +29,10 @@ storage:
               volumes:
                 - "data:/data"
                 - "/var/run/docker.sock:/var/run/docker.sock"
+              secrets:
+                - "portainer_admin_pwd"
               command:
-                - "--no-analytics"
+                - "--admin-password-file=/run/secrets/portainer_admin_pwd"
                 - "--host=unix:///var/run/docker.sock"
               labels:
                 - "traefik.enable=true"
@@ -35,12 +47,13 @@ storage:
                 - "traefik.http.routers.portaineredge.tls.certresolver=letsencryptresolver"
                 - "traefik.http.services.portaineredge.loadbalancer.server.port=8000"
               environment:
-                - "PUID=${CORE_USER_ID}"
-                - "PGID=${DOCKER_GROUP_ID}"
                 - "TZ=${TZ}"
               networks:
                 - traefik
               restart: unless-stopped
+          secrets:
+            portainer_admin_pwd:
+              file: "./secrets/portainer_admin.secret"
           networks:
             traefik:
               name: backend
