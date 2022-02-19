@@ -9,6 +9,10 @@ storage:
       mode: 0750
       contents:
         local: files/create-coreos-env.sh
+    - path: /usr/local/bin/docker-compose-backup.sh
+      mode: 0750
+      contents:
+        local: files/docker-compose-backup.sh
     - path: /etc/profile.d/systemd-pager.sh
       mode: 0644
       overwrite: true
