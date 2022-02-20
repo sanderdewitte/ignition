@@ -10,18 +10,19 @@ set -o nounset
 set -o pipefail
 IFS=$'\n'
 
+backup_day=$(date +"%u")
+backup_time=$(date +"%y%m%dT%H%M")
+
 project_dir="${1:-$PWD}"
+project_name=$(basename "$project_dir")
 if [ -f "$project_dir/docker-compose.yml" ]; then
   echo "[i] Found docker-compose config at $project_dir/docker-compose.yml"
 else
-  echo "[X] Could not find a docker-compose.yml file in $project_dir"
+  echo "[x] Could not find a docker-compose.yml file in $project_dir"
   exit 1
 fi
 
-project_name=$(basename "$project_dir")
-backup_day=$(date +"%u")
-backup_time=$(date +"%y%m%dT%H%M")
-data_dir="/data"
+data_dir="/var/opt/data"
 backup_parent_dir="$data_dir/backups/$project_name"
 backup_dir="$backup_parent_dir/$backup_time"
 
