@@ -75,7 +75,7 @@ for service_name in $(docker-compose config --services); do
   docker logs "$container_id" > "$service_dir/docker.out" 2> "$service_dir/docker.err"
 
   # save data volumes
-  skip_volumes=("/var/run/docker.sock" "/sys" "/proc" "/var/opt/data/backups")
+  skip_volumes=("/var/run/docker.sock" "/sys" "/proc" "/var/opt/data/backups" "/var/lib/docker/volumes/nextcloud_mysql/_data")
   mkdir -p "$service_dir/volumes"
   for source in $(docker inspect -f '{{range .Mounts}}{{println .Source}}{{end}}' "$container_id"); do
     match=0 

@@ -4,43 +4,182 @@ storage:
   directories:
     - path: "/opt/systemd/nextcloud"
       mode: 0755
+    - path: "/opt/systemd/nextcloud/secrets"
+      mode: 0750
+    - path: "/opt/redis"
+      mode: 0755
   files:
+    - path: "/opt/systemd/nextcloud/secrets/nextcloud_admin.secret"
+      mode: 0440
+      contents:
+        local: files/nextcloud_admin.secret
+      user:
+        name: root
+      group:
+        name: docker
+    - path: "/opt/systemd/nextcloud/secrets/nextcloud_mysql_root.secret"
+      mode: 0440
+      contents:
+        local: files/nextcloud_mysql_root.secret
+      user:
+        name: root
+      group:
+        name: docker
+    - path: "/opt/systemd/nextcloud/secrets/nextcloud_mysql_db.secret"
+      mode: 0440
+      contents:
+        local: files/nextcloud_mysql_db.secret
+      user:
+        name: root
+      group:
+        name: docker
+    - path: "/opt/redis/redis.conf"
+      mode: 0644
+      contents:
+        local: files/redis.conf
+    - path: "/opt/systemd/nextcloud/.env"
+      mode: 0644
+      contents:
+        local: files/nextcloud.env
     - path: "/opt/systemd/nextcloud/docker-compose.yml"
       mode: 0644
       contents:
         inline: |-
           version: '3.9'
           services:
-            nextcloud:
-              image: lscr.io/linuxserver/nextcloud
-              container_name: nextcloud
+            nextcloud-db:
+              image: mariadb
+              container_name: nextcloud_mariadb
               security_opt:
                 - no-new-privileges
+                - label=disable
+              ulimits:
+                nofile:
+                  soft: "32183"
+                  hard: "32183"
+              command: --transaction-isolation=READ-COMMITTED --log-bin=mysqld-bin --binlog-format=ROW --log_bin_compress
               volumes:
-                - "config:/config"
-                - "/var/opt/data:/data"
-                - "/var/run/docker.sock:/var/run/docker.sock:ro" 
+                - "mysql:/var/lib/mysql"
+              secrets:
+                - nextcloud_mysql_root_pwd
+                - nextcloud_mysql_db_pwd
+              environment:
+                - "MYSQL_ROOT_PASSWORD_FILE=/run/secrets/nextcloud_mysql_root_pwd"
+                - "MYSQL_PASSWORD_FILE=/run/secrets/nextcloud_mysql_db_pwd"
+                - "MYSQL_DATABASE=${NEXTCLOUD_MYSQL_DB}"
+                - "MYSQL_USER=${NEXTCLOUD_MYSQL_USER}"
+              networks:
+                - nextcloud
+              restart: unless-stopped
+            nextcloud-redis:
+              image: redis
+              container_name: nextcloud_redis
+              security_opt:
+                - no-new-privileges
+                - label=disable
+              ulimits:
+                nofile:
+                  soft: "10000"
+                  hard: "10000"
+              command: /usr/local/etc/redis/redis.conf
+              volumes:
+                - "redis:/var/lib/redis"
+                - "/opt/redis/redis.conf:/usr/local/etc/redis/redis.conf:ro"
+              environment:
+                - "REDIS_REPLICATION_MODE=master"
+              networks:
+                - nextcloud
+              restart: unless-stopped
+            nextcloud:
+              image: nextcloud
+              container_name: nextcloud
+              hostname: cloud.${SERVER_DOMAIN_NAME}
+              security_opt:
+                - no-new-privileges
+                - label=disable
+              sysctls:
+                - net.ipv4.ip_unprivileged_port_start=0
+              volumes:
+                - "webroot:/var/www/html"
+                - "config:/var/www/html/config"
+                - "apps:/var/www/html/custom_apps"
+                - "themes:/var/www/html/themes"
+                - "data:/var/www/data"
+              secrets:
+                - nextcloud_admin_user_pwd
+                - nextcloud_mysql_db_pwd
               labels:
                 - "traefik.enable=true"
                 - "traefik.http.routers.nextcloud.service=nextcloud"
                 - "traefik.http.routers.nextcloud.rule=Host(`cloud.${SERVER_DOMAIN_NAME}`)"
                 - "traefik.http.routers.nextcloud.entrypoints=websecure"
                 - "traefik.http.routers.nextcloud.tls.certresolver=letsencryptresolver"
-                - "traefik.http.services.nextcloud.loadbalancer.server.port=443"
+                - "traefik.http.routers.nextcloud.middlewares=nextcloud-headers,nextcloud-dav"
+                - "traefik.http.middlewares.nextcloud-headers.headers.stsSeconds=31536000"
+                - "traefik.http.middlewares.nextcloud-headers.headers.framedeny=true"
+                - "traefik.http.middlewares.nextcloud-headers.headers.contentTypeNosniff=true"
+                - "traefik.http.middlewares.nextcloud-headers.headers.browserXssFilter=true"
+                - "traefik.http.middlewares.nextcloud-headers.headers.sslredirect=true"
+                - "traefik.http.middlewares.nextcloud-headers.headers.customFrameOptionsValue=SAMEORIGIN"
+                - "traefik.http.middlewares.nextcloud-dav.redirectregex.regex=https://(.*)/.well-known/(card|cal)dav"
+                - "traefik.http.middlewares.nextcloud-dav.redirectregex.replacement=https://$$1/remote.php/dav/"
+                - "traefik.http.middlewares.nextcloud-dav.redirectregex.permanent=true"
+                - "traefik.http.services.nextcloud.loadbalancer.server.port=80"
               environment:
-                - "PUID=${CORE_USER_ID}"
-                - "PGID=${DOCKER_GROUP_ID}"
+                - "MYSQL_HOST=nextcloud-db"
+                - "MYSQL_PASSWORD_FILE=/run/secrets/nextcloud_mysql_db_pwd"
+                - "MYSQL_DATABASE=${NEXTCLOUD_MYSQL_DB}"
+                - "MYSQL_USER=${NEXTCLOUD_MYSQL_USER}"
+                - "REDIS_HOST=nextcloud-redis"
+                - "TRUSTED_PROXIES=172.0.0.0/8"
+                - "OVERWRITEHOST=cloud.${SERVER_DOMAIN_NAME}"
+                - "OVERWRITEPROTOCOL=https"
+                - "UPLOAD_MAX_SIZE=${NEXTCLOUD_UPLOAD_MAX_SIZE}"
+                - "APC_SHM_SIZE=${NEXTCLOUD_APC_SHM_SIZE}"
+                - "OPCACHE_MEM_SIZE=${NEXTCLOUD_OPCACHE_MEM_SIZE}"
+                - "CRON_PERIOD=${NEXTCLOUD_CRON_PERIOD}"
                 - "TZ=${TZ}"
+                - "NEXTCLOUD_ADMIN_USER=${NEXTCLOUD_ADMIN_USER}"
+                - "NEXTCLOUD_ADMIN_PASSWORD_FILE=/run/secrets/nextcloud_admin_user_pwd"
+                - "NEXTCLOUD_DATA_DIR=/var/www/data"
+                - "NEXTCLOUD_TRUSTED_DOMAINS=${SERVER_DOMAIN_NAME}"
+                - "NEXTCLOUD_HOSTNAME=cloud.${SERVER_DOMAIN_NAME}"
+              depends_on:
+                - nextcloud-db
+                - nextcloud-redis
               networks:
                 - traefik
+                - nextcloud
               restart: unless-stopped
           volumes:
+            mysql:
+              external: false
+            redis:
+              external: false
+            webroot:
+              external: false
             config:
+              external: false
+            apps:
+              external: false
+            themes:
+              external: false
+            data:
               external: false
           networks:
             traefik:
               name: backend
               external: true
+            nextcloud:
+              name: nextcloud
+              external: false
+          secrets:
+            nextcloud_mysql_root_pwd:
+              file: ./secrets/nextcloud_mysql_root.secret
+            nextcloud_mysql_db_pwd:
+              file: ./secrets/nextcloud_mysql_db.secret
+            nextcloud_admin_user_pwd:
+              file: ./secrets/nextcloud_admin.secret
   links:
     - path: /opt/systemd/nextcloud/docker-compose-backup.sh
       target: /usr/local/bin/docker-compose-backup.sh
