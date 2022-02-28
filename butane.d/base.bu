@@ -40,7 +40,7 @@ storage:
         inline: |
           # Disables the magic SysRq key
           kernel.sysrq = 0
-    - path: /etc/profile.d/default-editor.sh
+    - path: /etc/profile.d/vim-default-editor.sh
       mode: 0644
       overwrite: true
       contents:
@@ -48,7 +48,7 @@ storage:
           if [ -x /usr/bin/vim ]; then
             export EDITOR=vim
           fi
-    - path: /etc/profile.d/default-editor.csh
+    - path: /etc/profile.d/vim-default-editor.csh
       mode: 0644
       overwrite: true
       contents:
