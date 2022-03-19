@@ -4,12 +4,6 @@ storage:
   directories:
     - path: "/opt/systemd/duplicati"
       mode: 0755
-    - path: "/var/local/data"
-      mode: 0770
-      user:
-        name: core
-      group:
-        name: docker
   files:
     - path: "/opt/systemd/duplicati/docker-compose.yml"
       mode: 0644
@@ -21,10 +15,12 @@ storage:
               image: lscr.io/linuxserver/duplicati
               container_name: duplicati
               hostname: backup.${SERVER_DOMAIN_NAME}
+              security_opt:
+                - no-new-privileges
+                - label=disable
               volumes:
                 - "config:/config"
-                - "/backups:/backups"
-                - "/var/lib/docker/volumes:/source:ro"
+                - "/var/opt/data/backups:/source:ro"
                 - "/var/run/docker.sock:/var/run/docker.sock:ro"
               labels:
                 - "traefik.enable=true"
@@ -49,15 +45,15 @@ storage:
               name: backend
               external: true
   links:
-    - path: "/var/local/data/backups"
-      target: /backups
+    - path: /opt/systemd/duplicati/docker-compose-backup.sh
+      target: /usr/local/bin/docker-compose-backup.sh
 systemd:
   units:
   - name: docker.duplicati.service
     enabled: true
     contents: |-
       [Unit]
-      Description=Syncthing Container
+      Description=Duplicati Backup Container
       After=network-online.target docker.service docker.traefik.service
       Requires=network.target network-online.target docker.service docker.traefik.service
       
@@ -65,15 +61,43 @@ systemd:
       Type=oneshot
       TimeoutStartSec=0
       RemainAfterExit=true
-      EnvironmentFile=-/etc/sysconfig/coreos-env
+      EnvironmentFile=-/etc/sysconfig/coreos.env
       WorkingDirectory=/opt/systemd/duplicati/
       ExecStartPre=-/usr/bin/timeout 2m /usr/bin/bash -c "while [ ! -x /usr/bin/docker-compose ]; do sleep 1; done"
       ExecStartPre=-/usr/bin/timeout 1m /usr/bin/bash -c "while [ ! -x \"$(find /usr/lib64 -name 'libpython3*.so.*' | head -1)\" ]; do sleep 1; done"
-      ExecStartPre=-/usr/bin/docker-compose down -v
-      ExecStartPre=-/usr/bin/docker-compose rm -v
+      ExecStartPre=-/usr/bin/docker-compose down
+      ExecStartPre=-/usr/bin/docker-compose rm
       ExecStartPre=-/usr/bin/docker-compose pull
       ExecStart=/usr/bin/docker-compose up -d
-      ExecStop=/usr/bin/docker-compose down -v
+      ExecStop=/usr/bin/docker-compose down
       
+      [Install]
+      WantedBy=multi-user.target
+  - name: backup.docker.duplicati.service
+    enabled: true
+    contents: |-
+      [Unit]
+      Description=Backup Duplicati Backup Container
+      After=docker.duplicati.service
+      Requires=docker.duplicati.service
+
+      [Service]
+      Type=oneshot
+      EnvironmentFile=-/etc/sysconfig/coreos.env
+      WorkingDirectory=/opt/systemd/duplicati/
+      ExecStart=/opt/systemd/duplicati/docker-compose-backup.sh
+
+      [Install]
+      WantedBy=backup.docker.duplicati.timer
+  - name: backup.docker.duplicati.timer
+    enabled: true
+    contents: |-
+      [Unit]
+      Description=Backup Duplicati Backup Container at 01:00 daily
+
+      [Timer]
+      OnCalendar=*-*-* 01:00:00
+      Unit=backup.docker.duplicati.service
+
       [Install]
       WantedBy=multi-user.target
