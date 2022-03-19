@@ -12,9 +12,11 @@ storage:
           version: '3.9'
           services:
             syncthing:
-              image: syncthing/syncthing
+              image: syncthing/syncthing:1
               container_name: syncthing
               hostname: sync.${SERVER_DOMAIN_NAME}
+              security_opt:
+                - no-new-privileges
               volumes:
                 - "data:/var/syncthing"
                 - "/var/run/docker.sock:/var/run/docker.sock:ro"
@@ -37,13 +39,16 @@ storage:
             traefik:
               name: backend
               external: true
+  links:
+    - path: /opt/systemd/syncthing/docker-compose-backup.sh
+      target: /usr/local/bin/docker-compose-backup.sh
 systemd:
   units:
   - name: docker.syncthing.service
     enabled: true
     contents: |-
       [Unit]
-      Description=Syncthing Container
+      Description=Syncthing Synchronization Container
       After=network-online.target docker.service docker.traefik.service
       Requires=network.target network-online.target docker.service docker.traefik.service
       
@@ -51,15 +56,43 @@ systemd:
       Type=oneshot
       TimeoutStartSec=0
       RemainAfterExit=true
-      EnvironmentFile=-/etc/sysconfig/coreos-env
+      EnvironmentFile=-/etc/sysconfig/coreos.env
       WorkingDirectory=/opt/systemd/syncthing/
       ExecStartPre=-/usr/bin/timeout 2m /usr/bin/bash -c "while [ ! -x /usr/bin/docker-compose ]; do sleep 1; done"
       ExecStartPre=-/usr/bin/timeout 1m /usr/bin/bash -c "while [ ! -x \"$(find /usr/lib64 -name 'libpython3*.so.*' | head -1)\" ]; do sleep 1; done"
-      ExecStartPre=-/usr/bin/docker-compose down -v
-      ExecStartPre=-/usr/bin/docker-compose rm -v
+      ExecStartPre=-/usr/bin/docker-compose down
+      ExecStartPre=-/usr/bin/docker-compose rm
       ExecStartPre=-/usr/bin/docker-compose pull
       ExecStart=/usr/bin/docker-compose up -d
-      ExecStop=/usr/bin/docker-compose down -v
+      ExecStop=/usr/bin/docker-compose down
       
+      [Install]
+      WantedBy=multi-user.target
+  - name: backup.docker.syncthing.service
+    enabled: true
+    contents: |-
+      [Unit]
+      Description=Backup Syncthing Synchronization Container
+      After=docker.syncthing.service
+      Requires=docker.syncthing.service
+
+      [Service]
+      Type=oneshot
+      EnvironmentFile=-/etc/sysconfig/coreos.env
+      WorkingDirectory=/opt/systemd/syncthing/
+      ExecStart=/opt/systemd/syncthing/docker-compose-backup.sh
+
+      [Install]
+      WantedBy=backup.docker.syncthing.timer
+  - name: backup.docker.syncthing.timer
+    enabled: true
+    contents: |-
+      [Unit]
+      Description=Backup Syncthing Synchronization Container at 01:50 daily
+
+      [Timer]
+      OnCalendar=*-*-* 01:50:00
+      Unit=backup.docker.syncthing.service
+
       [Install]
       WantedBy=multi-user.target
