@@ -17,18 +17,18 @@ storage:
         name: root
       group:
         name: docker
-    - path: "/opt/systemd/nextcloud/secrets/nextcloud_mysql_root.secret"
+    - path: "/opt/systemd/nextcloud/secrets/nextcloud_db_root.secret"
       mode: 0440
       contents:
-        local: files/nextcloud_mysql_root.secret
+        local: files/nextcloud_db_root.secret
       user:
         name: root
       group:
         name: docker
-    - path: "/opt/systemd/nextcloud/secrets/nextcloud_mysql_db.secret"
+    - path: "/opt/systemd/nextcloud/secrets/nextcloud_db.secret"
       mode: 0440
       contents:
-        local: files/nextcloud_mysql_db.secret
+        local: files/nextcloud_db.secret
       user:
         name: root
       group:
@@ -48,8 +48,8 @@ storage:
           version: '3.9'
           services:
             nextcloud-db:
-              image: mariadb
-              container_name: nextcloud_mariadb
+              image: mariadb:10
+              container_name: nextcloud-mariadb
               security_opt:
                 - no-new-privileges
                 - label=disable
@@ -61,19 +61,19 @@ storage:
               volumes:
                 - "mysql:/var/lib/mysql"
               secrets:
-                - nextcloud_mysql_root_pwd
-                - nextcloud_mysql_db_pwd
+                - nextcloud_db_root_pwd
+                - nextcloud_db_pwd
               environment:
-                - "MYSQL_ROOT_PASSWORD_FILE=/run/secrets/nextcloud_mysql_root_pwd"
-                - "MYSQL_PASSWORD_FILE=/run/secrets/nextcloud_mysql_db_pwd"
+                - "MYSQL_ROOT_PASSWORD_FILE=/run/secrets/nextcloud_db_root_pwd"
+                - "MYSQL_PASSWORD_FILE=/run/secrets/nextcloud_db_pwd"
                 - "MYSQL_DATABASE=${NEXTCLOUD_MYSQL_DB}"
                 - "MYSQL_USER=${NEXTCLOUD_MYSQL_USER}"
               networks:
                 - nextcloud
               restart: unless-stopped
-            nextcloud-redis:
-              image: redis
-              container_name: nextcloud_redis
+            nextcloud-cache:
+              image: redis:6
+              container_name: nextcloud-redis
               security_opt:
                 - no-new-privileges
                 - label=disable
@@ -83,7 +83,7 @@ storage:
                   hard: "10000"
               command: /usr/local/etc/redis/redis.conf
               volumes:
-                - "redis:/var/lib/redis"
+                - "redis:/data"
                 - "/opt/redis/redis.conf:/usr/local/etc/redis/redis.conf:ro"
               environment:
                 - "REDIS_REPLICATION_MODE=master"
@@ -91,7 +91,7 @@ storage:
                 - nextcloud
               restart: unless-stopped
             nextcloud:
-              image: nextcloud
+              image: nextcloud:23
               container_name: nextcloud
               hostname: cloud.${SERVER_DOMAIN_NAME}
               security_opt:
@@ -107,7 +107,7 @@ storage:
                 - "data:/var/www/data"
               secrets:
                 - nextcloud_admin_user_pwd
-                - nextcloud_mysql_db_pwd
+                - nextcloud_db_pwd
               labels:
                 - "traefik.enable=true"
                 - "traefik.http.routers.nextcloud.service=nextcloud"
@@ -127,7 +127,7 @@ storage:
                 - "traefik.http.services.nextcloud.loadbalancer.server.port=80"
               environment:
                 - "MYSQL_HOST=nextcloud-db"
-                - "MYSQL_PASSWORD_FILE=/run/secrets/nextcloud_mysql_db_pwd"
+                - "MYSQL_PASSWORD_FILE=/run/secrets/nextcloud_db_pwd"
                 - "MYSQL_DATABASE=${NEXTCLOUD_MYSQL_DB}"
                 - "MYSQL_USER=${NEXTCLOUD_MYSQL_USER}"
                 - "REDIS_HOST=nextcloud-redis"
@@ -146,7 +146,7 @@ storage:
                 - "NEXTCLOUD_HOSTNAME=cloud.${SERVER_DOMAIN_NAME}"
               depends_on:
                 - nextcloud-db
-                - nextcloud-redis
+                - nextcloud-cache
               networks:
                 - traefik
                 - nextcloud
@@ -174,10 +174,10 @@ storage:
               name: nextcloud
               external: false
           secrets:
-            nextcloud_mysql_root_pwd:
-              file: ./secrets/nextcloud_mysql_root.secret
-            nextcloud_mysql_db_pwd:
-              file: ./secrets/nextcloud_mysql_db.secret
+            nextcloud_db_root_pwd:
+              file: ./secrets/nextcloud_db_root.secret
+            nextcloud_db_pwd:
+              file: ./secrets/nextcloud_db.secret
             nextcloud_admin_user_pwd:
               file: ./secrets/nextcloud_admin.secret
   links:
@@ -197,15 +197,15 @@ systemd:
       Type=oneshot
       TimeoutStartSec=0
       RemainAfterExit=true
-      EnvironmentFile=-/etc/sysconfig/coreos-env
+      EnvironmentFile=-/etc/sysconfig/coreos.env
       WorkingDirectory=/opt/systemd/nextcloud/
       ExecStartPre=-/usr/bin/timeout 2m /usr/bin/bash -c "while [ ! -x /usr/bin/docker-compose ]; do sleep 1; done"
       ExecStartPre=-/usr/bin/timeout 1m /usr/bin/bash -c "while [ ! -x \"$(find /usr/lib64 -name 'libpython3*.so.*' | head -1)\" ]; do sleep 1; done"
-      ExecStartPre=-/usr/bin/docker-compose down -v
-      ExecStartPre=-/usr/bin/docker-compose rm -v
+      ExecStartPre=-/usr/bin/docker-compose down
+      ExecStartPre=-/usr/bin/docker-compose rm
       ExecStartPre=-/usr/bin/docker-compose pull
       ExecStart=/usr/bin/docker-compose up -d
-      ExecStop=/usr/bin/docker-compose down -v
+      ExecStop=/usr/bin/docker-compose down
       
       [Install]
       WantedBy=multi-user.target
@@ -219,7 +219,7 @@ systemd:
 
       [Service]
       Type=oneshot
-      EnvironmentFile=-/etc/sysconfig/coreos-env
+      EnvironmentFile=-/etc/sysconfig/coreos.env
       WorkingDirectory=/opt/systemd/nextcloud/
       ExecStart=/opt/systemd/nextcloud/docker-compose-backup.sh
 
