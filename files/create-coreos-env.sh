@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-cat >/etc/sysconfig/coreos-env <<EOF
+cat >/etc/sysconfig/coreos.env <<EOF
 # Core user ID
 CORE_USER_ID=$(getent passwd core | cut -d ':' -f 3)
 
@@ -14,7 +14,7 @@ SERVER_DOMAIN_NAME=${SERVER_DOMAIN_NAME}
 TZ=${TZ}
 EOF
 
-if [ ! -f /etc/sysconfig/coreos-env ]; then
+if [ ! -f /etc/sysconfig/coreos.env ]; then
   exit 1
 fi
 
