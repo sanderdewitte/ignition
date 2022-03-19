@@ -2,5 +2,6 @@
 *.tmp
 *.key
 *.env
+*.ini
 *.secret
 *.aes
