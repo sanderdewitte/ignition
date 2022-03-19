@@ -1,14 +1,9 @@
 #!/usr/bin/env bash
+set -o nounset
 
 # fully backup a docker-compose project,
 # including images, named/unnamed volumes,
 # container filesystems, config and logs 
-
-set -o errexit
-set -o errtrace
-set -o nounset
-set -o pipefail
-IFS=$'\n'
 
 backup_day=$(date +"%u")
 backup_time=$(date +"%y%m%dT%H%M")
@@ -22,12 +17,12 @@ else
   exit 1
 fi
 
+[ -f "$project_dir/docker-compose.env" ] && source "$project_dir/docker-compose.env"
+[ -f "$project_dir/.env" ] && source "$project_dir/.env"
+
 data_dir="/var/opt/data"
 backup_parent_dir="$data_dir/backups/$project_name"
 backup_dir="$backup_parent_dir/$backup_time"
-
-[ -f "$project_dir/docker-compose.env" ] && source "$project_dir/docker-compose.env"
-[ -f "$project_dir/.env" ] && source "$project_dir/.env"
 
 echo "[+] Backing up $project_name project to $backup_dir"
 mkdir -p "$backup_dir"
@@ -35,13 +30,38 @@ mkdir -p "$backup_dir"
 echo "    - Saving docker-compose.yml config"
 cp "$project_dir/docker-compose.yml" "$backup_dir/docker-compose.yml"
 
-# optional: run a command inside the contianer to dump your application's state/database to a stable file
+# run command inside container to dump application state/database to a stable file
 echo "    - Saving application state to ./dumps"
+db_containers=("nextcloud-mariadb" "nextcloud-redis")
 mkdir -p "$backup_dir/dumps"
-# your database/stateful service export commands to run inside docker go here, e.g.
-#   docker-compose exec postgres env PGPASSWORD="$POSTGRES_PASSWORD" pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB" | gzip -9 > "$backup_dir/dumps/$POSTGRES_DB.sql.gz"
-#   docker-compose exec redis redis-cli SAVE
-#   docker-compose exec redis cat /data/dump.rdb | gzip -9 > "$backup_dir/dumps/redis.rdb.gz"
+for db_container in "${db_containers[@]}"; do
+
+  [[ $db_container != ${project_name}* ]] && continue
+
+  if [[ $db_container == *db ]]; then
+    archive_name=${project_name}_db_dump_day${backup_day}.sql.gz
+    secrets_file=secrets/${project_name}_db_root.secret
+    if [ -f $secrets_file ]; then
+      read -r host_dir container_dir <<< $(docker inspect -f '{{range .Mounts}}{{if eq "volume" .Type}}{{println .Source .Destination}}{{end}}{{end}}' $db_container | head -1)
+      echo -e "[mysqldump]\nuser=root\npassword=$(cat -- "$secrets_file")" > $host_dir/.my.cnf
+      if  [ -f $host_dir/.my.cnf ]; then
+        chmod 0600 $host_dir/.my.cnf
+        docker exec $db_container mysqldump --defaults-file=$container_dir/.my.cnf --skip-lock-tables --single-transaction --all-databases | gzip -9 > $backup_dir/dumps/$archive_name
+        rm -f $host_dir/.my.cnf
+      fi
+    fi
+  fi
+
+  if [[ $db_container == *redis ]]; then
+    archive_name=${project_name}_redis_dump_day${backup_day}.rdb.gz
+    redis_dir=/data
+    redis_save_result=$(docker exec $db_container /usr/local/bin/redis-cli -e SAVE)
+    if [[ "$redis_save_result" == "OK" ]]; then
+      docker exec $db_container cat $redis_dir/dump.rdb | gzip -9 > "$backup_dir/dumps/$archive_name"
+    fi
+  fi
+
+done
 
 # optional: pause the containers before backing up to ensure consistency
 # docker-compose pause
@@ -75,9 +95,10 @@ for service_name in $(docker-compose config --services); do
   docker logs "$container_id" > "$service_dir/docker.out" 2> "$service_dir/docker.err"
 
   # save data volumes
-  skip_volumes=("/var/run/docker.sock" "/sys" "/proc" "/var/opt/data/backups" "/var/lib/docker/volumes/nextcloud_mysql/_data")
+  skip_volumes=("/var/run/docker.sock" "/sys" "/proc" "/var/opt/data/backups" "/var/lib/docker/volumes/nextcloud_mysql/_data" "/var/lib/docker/volumes/nextcloud_redis/_data")
   mkdir -p "$service_dir/volumes"
   for source in $(docker inspect -f '{{range .Mounts}}{{println .Source}}{{end}}' "$container_id"); do
+    [[ $source == *.secret ]] && continue
     match=0 
     for skip_volume in "${skip_volumes[@]}"; do
       if [[ $skip_volume = "$source" ]]; then
