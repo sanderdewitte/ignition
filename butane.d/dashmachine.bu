@@ -16,6 +16,7 @@ storage:
               container_name: dashmachine
               security_opt:
                 - no-new-privileges
+                - label=disable
               volumes:
                 - "config:/dashmachine/dashmachine/user_data"
                 - "/var/run/docker.sock:/var/run/docker.sock:ro" 
