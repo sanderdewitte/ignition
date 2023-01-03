@@ -1,0 +1,20 @@
+disable_cache = true
+disable_mlock = true
+ui = true
+
+storage “raft” {
+  path = “/vault/db”
+  node_id = “node1”
+}
+
+listener “tcp” {
+  address = “[::]:8200”
+  cluster_address = "[::]:8201"
+  tls_disable = “true”
+}
+
+plugin_directory = "/vault/plugins"
+api_addr = “http://127.0.0.1:8200”
+cluster_addr = “http://127.0.0.1:8201”
+default_lease_ttl = "168h"
+max_lease_ttl = "720h"

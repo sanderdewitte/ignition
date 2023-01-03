@@ -5,3 +5,4 @@
 *.ini
 *.secret
 *.aes
+files/vault_config.hcl

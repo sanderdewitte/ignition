@@ -12,6 +12,7 @@ ignition:
       - source: https://sanderdewitte.github.io/ignition/butane.d/nextcloud.bu
       - source: https://sanderdewitte.github.io/ignition/butane.d/duplicati.bu
       - source: https://sanderdewitte.github.io/ignition/butane.d/imapfilter.bu
+      - source: https://sanderdewitte.github.io/ignition/butane.d/vault.bu
   timeouts:
     http_response_headers: 6
     http_total: 60
