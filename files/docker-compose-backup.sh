@@ -137,6 +137,9 @@ else
   echo "[√] Finished backing up $project_name to $archive_name."
 fi
 
+# cleanup directories older than 8 days that were not properly removed
+find $backup_parent_dir -mindepth 1 -maxdepth 1 -type d -mtime +8 -exec rm -rf {} \;
+
 # resume the containers if paused above
 # docker-compose unpause
 
