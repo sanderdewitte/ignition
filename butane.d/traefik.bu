@@ -36,7 +36,7 @@ storage:
           version: '3.9'
           services:
             traefik:
-              image: traefik:2.6
+              image: traefik:2.10
               container_name: traefik
               security_opt:
                 - no-new-privileges
@@ -84,7 +84,8 @@ storage:
               environment:
                 - "TZ=${TZ}"
                 - "VULTR_API_KEY_FILE=/run/secrets/vultr_api_key"
-                - "VULTR_HTTP_TIMEOUT=3600"
+                - "VULTR_HTTP_TIMEOUT=10800"
+                - "LEGO_DISABLE_CNAME_SUPPORT=true"
               networks:
                 - traefik
               restart: unless-stopped
