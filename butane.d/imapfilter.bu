@@ -58,19 +58,20 @@ storage:
           version: '3.9'
           services:
             sanderdewitte.com:
-              image: ntnn/imapfilter
+              image: ntnn/imapfilter:v2.8.0
               container_name: imapfilter-sanderdewitte.com
               security_opt:
                 - no-new-privileges
                 - label=disable
               volumes:
+                - "/var/log/imapfilter/sanderdewitte_com.log:/var/log/imapfilter.log:rw"
                 - "/var/run/docker.sock:/var/run/docker.sock:ro"
-                - "/var/log/imapfilter/sanderdewitte_com.log:/var/log/imapfilter.log"
               secrets:
                 - "sanderdewitte_com_pwd"
                 - "git_token"
               environment:
                 - "TZ=${TZ}"
+                - "GIT_DISCOVERY_ACROSS_FILESYSTEM=1"
                 - "GIT_TARGET=${IMAPFILTER_CONFIG_GIT_TARGET}"
                 - "GIT_USER=${IMAPFILTER_CONFIG_GIT_USER}"
                 - "GIT_TOKEN=/run/secrets/git_token"
@@ -82,19 +83,20 @@ storage:
                 - imapfilter
               restart: unless-stopped
             mnqmusic.com:
-              image: ntnn/imapfilter
+              image: ntnn/imapfilter:v2.8.0
               container_name: imapfilter-mnqmusic.com
               security_opt:
                 - no-new-privileges
                 - label=disable
               volumes:
+                - "/var/log/imapfilter/mnqmusic_com.log:/var/log/imapfilter.log:rw"
                 - "/var/run/docker.sock:/var/run/docker.sock:ro"
-                - "/var/log/imapfilter/mnqmusic_com.log:/var/log/imapfilter.log"
               secrets:
                 - "mnqmusic_com_pwd"
                 - "git_token"
               environment:
                 - "TZ=${TZ}"
+                - "GIT_DISCOVERY_ACROSS_FILESYSTEM=1"
                 - "GIT_TARGET=${IMAPFILTER_CONFIG_GIT_TARGET}"
                 - "GIT_USER=${IMAPFILTER_CONFIG_GIT_USER}"
                 - "GIT_TOKEN=/run/secrets/git_token"
@@ -106,19 +108,20 @@ storage:
                 - imapfilter
               restart: unless-stopped
             mnqphotography.com:
-              image: ntnn/imapfilter
+              image: ntnn/imapfilter:v2.8.0
               container_name: imapfilter-mnqphotography.com
               security_opt:
                 - no-new-privileges
                 - label=disable
               volumes:
-                - "/var/log/imapfilter/mnqphotography_com.log:/var/log/imapfilter.log"
+                - "/var/log/imapfilter/mnqphotography_com.log:/var/log/imapfilter.log:rw"
                 - "/var/run/docker.sock:/var/run/docker.sock:ro"
               secrets:
                 - "mnqphotography_com_pwd"
                 - "git_token"
               environment:
                 - "TZ=${TZ}"
+                - "GIT_DISCOVERY_ACROSS_FILESYSTEM=1"
                 - "GIT_TARGET=${IMAPFILTER_CONFIG_GIT_TARGET}"
                 - "GIT_USER=${IMAPFILTER_CONFIG_GIT_USER}"
                 - "GIT_TOKEN=/run/secrets/git_token"
