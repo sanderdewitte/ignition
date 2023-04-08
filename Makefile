@@ -2,7 +2,7 @@
 
 DOCKER := /usr/bin/env docker
 YAML_PROCESSOR_IMAGE := docker.io/mikefarah/yq:latest
-BUTANE_IMAGE := quay.io/coreos/butane:release
+BUTANE_IMAGE := quay.io/coreos/butane:latest
 
 TEMP_DIR := ./temp.d
 BUTANE_DIR := ./butane.d
