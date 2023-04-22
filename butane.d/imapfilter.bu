@@ -58,7 +58,7 @@ storage:
           version: '3.9'
           services:
             sanderdewitte.com:
-              image: ntnn/imapfilter:v2.8.0
+              image: ntnn/imapfilter:latest-tag
               container_name: imapfilter-sanderdewitte.com
               security_opt:
                 - no-new-privileges
@@ -71,7 +71,6 @@ storage:
                 - "git_token"
               environment:
                 - "TZ=${TZ}"
-                - "GIT_DISCOVERY_ACROSS_FILESYSTEM=1"
                 - "GIT_TARGET=${IMAPFILTER_CONFIG_GIT_TARGET}"
                 - "GIT_USER=${IMAPFILTER_CONFIG_GIT_USER}"
                 - "GIT_TOKEN=/run/secrets/git_token"
@@ -83,7 +82,7 @@ storage:
                 - imapfilter
               restart: unless-stopped
             mnqmusic.com:
-              image: ntnn/imapfilter:v2.8.0
+              image: ntnn/imapfilter:latest-tag
               container_name: imapfilter-mnqmusic.com
               security_opt:
                 - no-new-privileges
@@ -96,7 +95,6 @@ storage:
                 - "git_token"
               environment:
                 - "TZ=${TZ}"
-                - "GIT_DISCOVERY_ACROSS_FILESYSTEM=1"
                 - "GIT_TARGET=${IMAPFILTER_CONFIG_GIT_TARGET}"
                 - "GIT_USER=${IMAPFILTER_CONFIG_GIT_USER}"
                 - "GIT_TOKEN=/run/secrets/git_token"
@@ -108,7 +106,7 @@ storage:
                 - imapfilter
               restart: unless-stopped
             mnqphotography.com:
-              image: ntnn/imapfilter:v2.8.0
+              image: ntnn/imapfilter:latest-tag
               container_name: imapfilter-mnqphotography.com
               security_opt:
                 - no-new-privileges
@@ -121,7 +119,6 @@ storage:
                 - "git_token"
               environment:
                 - "TZ=${TZ}"
-                - "GIT_DISCOVERY_ACROSS_FILESYSTEM=1"
                 - "GIT_TARGET=${IMAPFILTER_CONFIG_GIT_TARGET}"
                 - "GIT_USER=${IMAPFILTER_CONFIG_GIT_USER}"
                 - "GIT_TOKEN=/run/secrets/git_token"
