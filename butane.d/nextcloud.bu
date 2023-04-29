@@ -68,6 +68,8 @@ storage:
                 - "MYSQL_PASSWORD_FILE=/run/secrets/nextcloud_db_pwd"
                 - "MYSQL_DATABASE=${NEXTCLOUD_MYSQL_DB}"
                 - "MYSQL_USER=${NEXTCLOUD_MYSQL_USER}"
+                - "MARIADB_AUTO_UPGRADE=1"
+                - "MARIADB_DISABLE_UPGRADE_BACKUP=1"
               networks:
                 - nextcloud
               restart: unless-stopped
