@@ -11,8 +11,8 @@ ignition:
       - source: https://sanderdewitte.github.io/ignition/butane.d/syncthing.bu
       - source: https://sanderdewitte.github.io/ignition/butane.d/nextcloud.bu
       - source: https://sanderdewitte.github.io/ignition/butane.d/duplicati.bu
-      - source: https://sanderdewitte.github.io/ignition/butane.d/imapfilter.bu
       - source: https://sanderdewitte.github.io/ignition/butane.d/vault.bu
+      - source: https://sanderdewitte.github.io/ignition/butane.d/imapfilter.bu
   timeouts:
     http_response_headers: 6
     http_total: 60
@@ -21,6 +21,12 @@ passwd:
     - name: core
       ssh_authorized_keys_local:
         - files/id_rsa.pub
+    - name: imapfilter
+      uid: 1001
+      no_create_home: true
+      no_user_group: false
+      no_log_init: true
+      shell: /sbin/nologin
 storage:
   files:
     - path: /etc/hostname
