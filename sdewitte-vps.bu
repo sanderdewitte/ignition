@@ -17,16 +17,20 @@ ignition:
     http_response_headers: 6
     http_total: 60
 passwd:
+  groups:
+    - name: container-group-1001
+      gid: 1001
   users:
+    - name: container-user-1001
+      uid: 1001
+      primary_group: container-group-1001
+      no_user_group: true
+      no_create_home: true
+      no_log_init: true
+      shell: /sbin/nologin
     - name: core
       ssh_authorized_keys_local:
         - files/id_rsa.pub
-    - name: imapfilter
-      uid: 1001
-      no_create_home: true
-      no_user_group: false
-      no_log_init: true
-      shell: /sbin/nologin
 storage:
   files:
     - path: /etc/hostname
