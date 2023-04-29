@@ -7,14 +7,22 @@ storage:
     - path: "/opt/systemd/imapfilter/secrets"
       mode: 0750
     - path: "/var/log/imapfilter"
-      mode: 0750
+      mode: 0770
+      group:
+        id: 1001
   files:
     - path: "/var/log/imapfilter/sanderdewitte_com.log"
-      mode: 0640
+      mode: 0660
+      group:
+        id: 1001
     - path: "/var/log/imapfilter/mnqmusic_com.log"
-      mode: 0640
+      mode: 0660
+      group:
+        id: 1001
     - path: "/var/log/imapfilter/mnqphotography_com.log"
-      mode: 0640
+      mode: 0660
+      group:
+        id: 1001
     - path: "/opt/systemd/imapfilter/secrets/sanderdewitte_com.secret"
       mode: 0440
       contents:
@@ -22,7 +30,7 @@ storage:
       user:
         name: root
       group:
-        name: docker
+        id: 1001
     - path: "/opt/systemd/imapfilter/secrets/mnqmusic_com.secret"
       mode: 0440
       contents:
@@ -30,7 +38,7 @@ storage:
       user:
         name: root
       group:
-        name: docker
+        id: 1001
     - path: "/opt/systemd/imapfilter/secrets/mnqphotography_com.secret"
       mode: 0440
       contents:
@@ -38,7 +46,7 @@ storage:
       user:
         name: root
       group:
-        name: docker
+        id: 1001
     - path: "/opt/systemd/imapfilter/secrets/git_token.secret"
       mode: 0440
       contents:
@@ -46,7 +54,7 @@ storage:
       user:
         name: root
       group:
-        name: docker
+        id: 1001
     - path: "/opt/systemd/imapfilter/.env"
       mode: 0644
       contents:
