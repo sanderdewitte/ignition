@@ -85,7 +85,7 @@ storage:
                 - "IMAPFILTER_CONFIG=entry_sanderdewitte.com.lua"
                 - "IMAPFILTER_LOGFILE=/var/log/imapfilter.log"
                 - "IMAPFILTER_DAEMON=yes"
-                - "IMAPFILTER_SLEEP=900"
+                - "IMAPFILTER_SLEEP=1800"
               networks:
                 - imapfilter
               restart: unless-stopped
@@ -109,7 +109,7 @@ storage:
                 - "IMAPFILTER_CONFIG=entry_mnqmusic.com.lua"
                 - "IMAPFILTER_LOGFILE=/var/log/imapfilter.log"
                 - "IMAPFILTER_DAEMON=yes"
-                - "IMAPFILTER_SLEEP=600"
+                - "IMAPFILTER_SLEEP=1200"
               networks:
                 - imapfilter
               restart: unless-stopped
@@ -133,7 +133,7 @@ storage:
                 - "IMAPFILTER_CONFIG=entry_mnqphotography.com.lua"
                 - "IMAPFILTER_LOGFILE=/var/log/imapfilter.log"
                 - "IMAPFILTER_DAEMON=yes"
-                - "IMAPFILTER_SLEEP=1800"
+                - "IMAPFILTER_SLEEP=3600"
               networks:
                 - imapfilter
               restart: unless-stopped
