@@ -141,6 +141,6 @@ fi
 find $backup_parent_dir -mindepth 1 -maxdepth 1 -type d -mtime +8 -exec rm -rf {} \;
 
 # resume the containers if paused above
-# docker-compose unpause
+# docker compose unpause
 
 exit 0
