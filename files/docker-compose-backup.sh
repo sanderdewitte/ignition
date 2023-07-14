@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -o nounset
 
-# fully backup a docker-compose project,
+# fully backup a docker compose project,
 # including images, named/unnamed volumes,
 # container filesystems, config and logs 
 
@@ -11,7 +11,7 @@ backup_time=$(date +"%y%m%dT%H%M")
 project_dir="${1:-$PWD}"
 project_name=$(basename "$project_dir")
 if [ -f "$project_dir/docker-compose.yml" ]; then
-  echo "[i] Found docker-compose config at $project_dir/docker-compose.yml"
+  echo "[i] Found docker compose config at $project_dir/docker-compose.yml"
 else
   echo "[x] Could not find a docker-compose.yml file in $project_dir"
   exit 1
@@ -64,13 +64,13 @@ for db_container in "${db_containers[@]}"; do
 done
 
 # optional: pause the containers before backing up to ensure consistency
-# docker-compose pause
+# docker compose pause
 
-for service_name in $(docker-compose config --services); do
+for service_name in $(docker compose config --services); do
 
-  image_id=$(docker-compose images -q "$service_name")
+  image_id=$(docker compose images -q "$service_name")
   image_name=$(docker image inspect --format '{{json .RepoTags}}' "$image_id" | jq -r '.[0]')
-  container_id=$(docker-compose ps -q "$service_name")
+  container_id=$(docker compose ps -q "$service_name")
 
   service_dir="$backup_dir/$service_name"
   echo "[*] Backing up Proj_${project_name}_Serv_${service_name} to ./$service_name"
