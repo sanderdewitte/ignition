@@ -89,7 +89,7 @@ systemd:
         [Service]
         Type=oneshot
         RemainAfterExit=true
-        ExecStart=/usr/bin/rpm-ostree install --apply-live --allow-inactive --idempotent vim docker-compose
+        ExecStart=/usr/bin/rpm-ostree install --apply-live --allow-inactive --idempotent vim
         ExecStart=/bin/touch /var/lib/%N.stamp
         RemainAfterExit=true
 
