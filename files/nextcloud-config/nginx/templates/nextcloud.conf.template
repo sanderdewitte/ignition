@@ -20,7 +20,12 @@ server {
 
     # set max upload size
     client_max_body_size 512M;
+
+    # set fastcgi buffers and timeouts
     fastcgi_buffers 64 4K;
+    fastcgi_read_timeout 50;
+    fastcgi_send_timeout 50;
+    fastcgi_connect_timeout 50;
 
     # Enable gzip but do not remove ETag headers
     gzip on;
