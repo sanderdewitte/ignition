@@ -39,6 +39,22 @@ storage:
         name: root
       group:
         name: docker
+    - path: "/opt/systemd/nextcloud/secrets/nextcloud_objectstore_s3_access_key_id.secret"
+      mode: 0440
+      contents:
+        local: files/nextcloud_objectstore_s3_access_key_id.secret
+      user:
+        name: root
+      group:
+        id: 33
+    - path: "/opt/systemd/nextcloud/secrets/nextcloud_objectstore_s3_secret_access_key.secret"
+      mode: 0440
+      contents:
+        local: files/nextcloud_objectstore_s3_secret_access_key.secret
+      user:
+        name: root
+      group:
+        id: 33
     - path: "/opt/nextcloud/redis/redis.conf"
       mode: 0644
       contents:
@@ -129,15 +145,21 @@ storage:
               secrets:
                 - nextcloud_admin_user_pwd
                 - nextcloud_db_pwd
+                - nextcloud_objectstore_s3_access_key_id
+                - nextcloud_objectstore_s3_secret_access_key
               environment:
                 - "MYSQL_HOST=nextcloud-db"
                 - "MYSQL_PASSWORD_FILE=/run/secrets/nextcloud_db_pwd"
                 - "MYSQL_DATABASE=${NEXTCLOUD_MYSQL_DB}"
                 - "MYSQL_USER=${NEXTCLOUD_MYSQL_USER}"
                 - "REDIS_HOST=nextcloud-redis"
-                - "TRUSTED_PROXIES=172.0.0.0/8"
+                - "REDIS_HOST_PORT=${NEXTCLOUD_REDIS_HOST_PORT}"
                 - "OVERWRITEHOST=cloud.${SERVER_DOMAIN_NAME}"
                 - "OVERWRITEPROTOCOL=https"
+              # - "OVERWRITECLIURL="
+              # - "OVERWRITEWEBROOT="
+              # - "OVERWRITECONDADDR="
+                - "TRUSTED_PROXIES=172.0.0.0/8"
                 - "UPLOAD_MAX_SIZE=${NEXTCLOUD_UPLOAD_MAX_SIZE}"
                 - "APC_SHM_SIZE=${NEXTCLOUD_APC_SHM_SIZE}"
                 - "OPCACHE_MEM_SIZE=${NEXTCLOUD_OPCACHE_MEM_SIZE}"
@@ -148,6 +170,17 @@ storage:
                 - "NEXTCLOUD_TRUSTED_DOMAINS=${SERVER_DOMAIN_NAME}"
                 - "NEXTCLOUD_HOSTNAME=cloud.${SERVER_DOMAIN_NAME}"
                 - "NC_default_phone_region=${NEXTCLOUD_DEFAULT_PHONE_REGION}"
+                - "OBJECTSTORE_S3_HOST=${OBJECTSTORE_S3_HOST}"
+                - "OBJECTSTORE_S3_PORT=${OBJECTSTORE_S3_PORT}"
+                - "OBJECTSTORE_S3_SSL=${OBJECTSTORE_S3_SSL}"
+              # - "OBJECTSTORE_S3_LEGACYAUTH=${OBJECTSTORE_S3_LEGACYAUTH}"
+              # - "OBJECTSTORE_S3_REGION=${OBJECTSTORE_S3_REGION}"
+                - "OBJECTSTORE_S3_BUCKET=${OBJECTSTORE_S3_BUCKET}"
+              # - "OBJECTSTORE_S3_USEPATH_STYLE=${OBJECTSTORE_S3_USEPATH_STYLE}"
+              # - "OBJECTSTORE_S3_OBJECT_PREFIX=${OBJECTSTORE_S3_OBJECT_PREFIX}"
+                - "OBJECTSTORE_S3_AUTOCREATE=${OBJECTSTORE_S3_AUTOCREATE}"
+                - "OBJECTSTORE_S3_KEY_FILE=/run/secrets/nextcloud_objectstore_s3_access_key_id"
+                - "OBJECTSTORE_S3_SECRET_FILE=/run/secrets/nextcloud_objectstore_s3_secret_access_key"
                 - "TZ=${TZ}"
               labels:
                 - "ofelia.enabled=true"
@@ -255,6 +288,10 @@ storage:
               file: ./secrets/nextcloud_db.secret
             nextcloud_admin_user_pwd:
               file: ./secrets/nextcloud_admin.secret
+            nextcloud_objectstore_s3_access_key_id:
+              file: ./secrets/nextcloud_objectstore_s3_access_key_id.secret
+            nextcloud_objectstore_s3_secret_access_key:
+              file: ./secrets/nextcloud_objectstore_s3_secret_access_key.secret
   links:
     - path: /opt/systemd/nextcloud/docker-compose-backup.sh
       target: /usr/local/bin/docker-compose-backup.sh
