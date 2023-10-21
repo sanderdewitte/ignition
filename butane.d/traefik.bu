@@ -49,9 +49,15 @@ storage:
                 - 80:80
                 - 443:443
               command:
-                - "--api.insecure=true"
+                - "--global.checkNewVersion=false"
+                - "--global.sendAnonymousUsage=false"
+                - "--api=true"
+                - "--api.dashboard=true"
+                - "--api.insecure=false"
+                - "--api.debug=false"
                 - "--providers.docker"
                 - "--providers.docker.exposedByDefault=false"
+                - "--providers.docker.swarmMode=false"
                 - "--providers.docker.network=backend"
                 - "--providers.docker.defaultRule=Host(`{{ normalize .Name }}.${SERVER_DOMAIN_NAME}`)"
                 - "--entrypoints.web.address=:80"
@@ -97,6 +103,8 @@ storage:
           networks:
             traefik:
               name: backend
+            default:
+              driver: bridge
   links:
     - path: /opt/systemd/traefik/docker-compose-backup.sh
       target: /usr/local/bin/docker-compose-backup.sh
