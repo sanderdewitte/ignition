@@ -66,11 +66,11 @@ done
 # optional: pause the containers before backing up to ensure consistency
 # docker compose pause
 
-for service_name in $(docker compose config --services); do
+for service_name in $(docker compose config --services 2>/dev/null); do
 
-  image_id=$(docker compose images -q "$service_name")
+  image_id=$(docker compose images -q "$service_name" 2>/dev/null)
   image_name=$(docker image inspect --format '{{json .RepoTags}}' "$image_id" | jq -r '.[0]')
-  container_id=$(docker compose ps -q "$service_name")
+  container_id=$(docker compose ps -q "$service_name" 2>/dev/null)
 
   service_dir="$backup_dir/$service_name"
   echo "[*] Backing up Proj_${project_name}_Serv_${service_name} to ./$service_name"
