@@ -10,6 +10,12 @@ backup_time=$(date +"%y%m%dT%H%M")
 
 project_dir="${1:-$PWD}"
 project_name=$(basename "$project_dir")
+data_dir="/var/opt/data"
+project_backup_dir="$data_dir/backups/$project_name"
+tmp_parent_backup_dir=$(mktemp -d -p "$data_dir")
+tmp_backup_dir="$tmp_parent_backup_dir/$backup_time"
+
+# exit if not a docker compose project
 if [ -f "$project_dir/docker-compose.yml" ]; then
   echo "[i] Found docker compose config at $project_dir/docker-compose.yml"
 else
@@ -17,23 +23,27 @@ else
   exit 1
 fi
 
+# source environment variables
 [ -f "$project_dir/docker-compose.env" ] && source "$project_dir/docker-compose.env"
 [ -f "$project_dir/.env" ] && source "$project_dir/.env"
 
-data_dir="/var/opt/data"
-backup_parent_dir="$data_dir/backups/$project_name"
-backup_dir="$backup_parent_dir/$backup_time"
-
-echo "[+] Backing up $project_name project to $backup_dir"
-mkdir -p "$backup_dir"
+# create temporary directory
+mkdir -p $tmp_backup_dir
+if [ -d "$tmp_backup_dir" ]; then
+  echo "[+] Backing up $project_name project to $tmp_backup_dir"
+else
+  echo "[x] Could not create temporary directory ($tmp_backup_dir) for $project_name project backup"
+  [ -d $tmp_parent_backup_dir ] && rmdir $tmp_parent_backup_dir
+  exit 1
+fi
 
 echo "    - Saving docker-compose.yml config"
-cp "$project_dir/docker-compose.yml" "$backup_dir/docker-compose.yml"
+cp "$project_dir/docker-compose.yml" "$tmp_backup_dir/docker-compose.yml"
 
 # run command inside container to dump application state/database to a stable file
 echo "    - Saving application state to ./dumps"
 db_containers=("nextcloud-mariadb" "nextcloud-redis")
-mkdir -p "$backup_dir/dumps"
+mkdir -p "$tmp_backup_dir/dumps"
 for db_container in "${db_containers[@]}"; do
 
   [[ $db_container != ${project_name}* ]] && continue
@@ -46,7 +56,7 @@ for db_container in "${db_containers[@]}"; do
       echo -e "[mysqldump]\nuser=root\npassword=$(cat -- "$secrets_file")" > $host_dir/.my.cnf
       if  [ -f $host_dir/.my.cnf ]; then
         chmod 0600 $host_dir/.my.cnf
-        docker exec $db_container mysqldump --defaults-file=$container_dir/.my.cnf --skip-lock-tables --single-transaction --all-databases | gzip -9 > $backup_dir/dumps/$archive_name
+        docker exec $db_container mysqldump --defaults-file=$container_dir/.my.cnf --skip-lock-tables --single-transaction --all-databases | gzip -9 > $tmp_backup_dir/dumps/$archive_name
         rm -f $host_dir/.my.cnf
       fi
     fi
@@ -57,7 +67,7 @@ for db_container in "${db_containers[@]}"; do
     redis_dir=/data
     redis_save_result=$(docker exec $db_container /usr/local/bin/redis-cli -e SAVE)
     if [[ "$redis_save_result" == "OK" ]]; then
-      docker exec $db_container cat $redis_dir/dump.rdb | gzip -9 > "$backup_dir/dumps/$archive_name"
+      docker exec $db_container cat $redis_dir/dump.rdb | gzip -9 > "$tmp_backup_dir/dumps/$archive_name"
     fi
   fi
 
@@ -72,7 +82,7 @@ for service_name in $(docker compose config --services 2>/dev/null); do
   image_name=$(docker image inspect --format '{{json .RepoTags}}' "$image_id" | jq -r '.[0]')
   container_id=$(docker compose ps -q "$service_name" 2>/dev/null)
 
-  service_dir="$backup_dir/$service_name"
+  service_dir="$tmp_backup_dir/$service_name"
   echo "[*] Backing up Proj_${project_name}_Serv_${service_name} to ./$service_name"
   mkdir -p "$service_dir"
     
@@ -124,23 +134,24 @@ for service_name in $(docker compose config --services 2>/dev/null); do
 
 done
 
+# optional: resume the containers if paused above
+# docker compose unpause
+
+# archive backup
 archive_name=${project_name}_container_backup_day${backup_day}.tgz 
-[ -f "$backup_parent_dir/$archive_name" ] && rm -f "$backup_parent_dir/$archive_name"
+[ -f "$project_backup_dir/$archive_name" ] && rm -f "$project_backup_dir/$archive_name"
 echo "[*] Compressing backup folder to $archive_name"
-tar -zcf "$backup_parent_dir/$archive_name" --totals -C "$backup_parent_dir" "$backup_time" && rm -Rf "$backup_dir"
+tar -zcf "$project_backup_dir/$archive_name" --totals -C "$tmp_parent_backup_dir" "$backup_time"
 retval=$?
 
+# change owner/mode of archive and remove temporary backup directory
 if [ $retval -ne 0 ]; then
   echo "[x] Something went wrong backing up $project_name to $archive_name."
+  exit 1
 else
-  [ -f "$backup_parent_dir/$archive_name" ] && chown ${CORE_USER_ID:-0}:${DOCKER_GROUP_ID:-0} "$backup_parent_dir/$archive_name" && chmod 0640 "$backup_parent_dir/$archive_name"
+  [ -f "$project_backup_dir/$archive_name" ] && chown ${CONTAINER_USER_ID:-0}:${CONTAINER_GROUP_ID:-0} "$project_backup_dir/$archive_name" && chmod 0640 "$project_backup_dir/$archive_name"
   echo "[√] Finished backing up $project_name to $archive_name."
+  [ -d "$tmp_parent_backup_dir" ] && rm -Rf "$tmp_parent_backup_dir"
 fi
-
-# cleanup directories older than 8 days that were not properly removed
-find $backup_parent_dir -mindepth 1 -maxdepth 1 -type d -mtime +8 -exec rm -rf {} \;
-
-# resume the containers if paused above
-# docker compose unpause
 
 exit 0
