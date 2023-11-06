@@ -11,8 +11,6 @@ backup_time=$(date +"%y%m%dT%H%M")
 project_dir="${1:-$PWD}"
 project_name=$(basename "$project_dir")
 data_dir="/var/opt/data"
-tmp_data_dir=$(mktemp -d -p "$data_dir")
-tmp_backup_dir="$tmp_data_dir/$backup_time"
 project_backup_dir="$data_dir/backups/$project_name"
 
 # exit if not a docker compose project
@@ -28,6 +26,8 @@ fi
 [ -f "$project_dir/.env" ] && source "$project_dir/.env"
 
 # create temporary directory
+tmp_data_dir=$(mktemp -d -p "$data_dir")
+tmp_backup_dir="$tmp_data_dir/$backup_time"
 mkdir -p $tmp_backup_dir
 if [ -d "$tmp_backup_dir" ]; then
   echo "[+] Backing up $project_name project to $tmp_backup_dir"
