@@ -20,7 +20,7 @@ storage:
                 - label=disable
               volumes:
                 - "config:/config"
-                - "/var/opt/data/backups:/source:ro"
+                - "/opt/data/backups:/source:ro"
                 - "/var/run/docker.sock:/var/run/docker.sock:ro"
               labels:
                 - "traefik.enable=true"
