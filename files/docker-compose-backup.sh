@@ -10,7 +10,7 @@ backup_time=$(date +"%y%m%dT%H%M")
 
 project_dir="${1:-$PWD}"
 project_name=$(basename "$project_dir")
-data_dir="/var/opt/data"
+data_dir="/opt/data"
 project_backup_dir="$data_dir/backups/$project_name"
 
 # exit if not a docker compose project
@@ -106,18 +106,21 @@ for service_name in $(docker compose config --services 2>/dev/null); do
   docker logs "$container_id" > "$service_dir/docker.out" 2> "$service_dir/docker.err"
 
   # save data volumes
-  skip_volumes=("/var/run/docker.sock" "/sys" "/proc" "/var/opt/data/backups" "/var/lib/docker/volumes/nextcloud_mysql/_data" "/var/lib/docker/volumes/nextcloud_redis/_data")
+  skip_volumes=("/sys" "/proc" "/var/run/docker.sock")
+  if [ -n "${BACKUP_SKIP_VOLUMES:-}" ]; then
+    skip_volumes+=("${BACKUP_SKIP_VOLUMES[@]}")
+  fi
   mkdir -p "$service_dir/volumes"
   for source in $(docker inspect -f '{{range .Mounts}}{{println .Source}}{{end}}' "$container_id"); do
     [[ $source == *.secret ]] && continue
-    match=0 
+    skip=0 
     for skip_volume in "${skip_volumes[@]}"; do
-      if [[ $skip_volume = "$source" ]]; then
-        match=1
+      if [[ "$source" = "$skip_volume" ]]; then
+        skip=1
 	break
       fi
     done
-    if [[ $match = 0 ]]; then
+    if [[ $skip = 0 ]]; then
       volume_dir="$service_dir/volumes$source"
       echo "    - Saving $source volume to ./$service_name/volumes$source"
       mkdir -p $(dirname "$volume_dir")
@@ -161,8 +164,11 @@ if [ $retval -ne 0 ]; then
   exit 1
 else
   [ -f "$project_backup_dir/$archive_name" ] && chown ${CONTAINER_USER_ID:-0}:${CONTAINER_GROUP_ID:-0} "$project_backup_dir/$archive_name" && chmod 0640 "$project_backup_dir/$archive_name"
-  echo "[√] Finished backing up $project_name to $archive_name."
   [ -d "$tmp_data_dir" ] && rm -Rf "$tmp_data_dir"
+  if [ -d "$tmp_data_dir" ]; then
+    echo "[x] Could not remove temporary directory ($tmp_data_dir) for $project_name backup."
+  fi
+  echo "[√] Finished backing up $project_name to $archive_name."
 fi
 
 exit 0
