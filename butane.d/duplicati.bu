@@ -4,24 +4,97 @@ storage:
   directories:
     - path: "/opt/systemd/duplicati"
       mode: 0755
+    - path: "/opt/systemd/duplicati/secrets"
+      mode: 0750
   files:
+    - path: "/opt/systemd/duplicati/secrets/duplicati_admin_passwd.secret"
+      mode: 0440
+      contents:
+        local: files/duplicati_admin_passwd.secret
+      user:
+        name: root
+      group:
+        name: container-group-1001
+    - path: "/opt/systemd/duplicati/secrets/backups_objectstore_s3_access_key_id.secret"
+      mode: 0440
+      contents:
+        local: files/backups_objectstore_s3_access_key_id.secret
+      user:
+        name: root
+      group:
+        name: container-group-1001
+    - path: "/opt/systemd/duplicati/secrets/backups_objectstore_s3_secret_access_key.secret"
+      mode: 0440
+      contents:
+        local: files/backups_objectstore_s3_secret_access_key.secret
+      user:
+        name: root
+      group:
+        name: container-group-1001
+    - path: "/opt/systemd/duplicati/.env"
+      mode: 0644
+      contents:
+        local: files/duplicati.env
     - path: "/opt/systemd/duplicati/docker-compose.yml"
       mode: 0644
       contents:
         inline: |-
           version: '3.9'
           services:
+            backupstore:
+              image: efrecon/s3fs:1.93
+              container_name: backups-s3fs
+              cap_add:
+                - SYS_ADMIN
+              security_opt:
+                - label=disable
+              devices:
+                - "/dev/fuse:/dev/fuse:rwm,z"
+              volumes:
+                - "/opt/data/backups:/opt/s3fs/bucket:rw,z,rshared"
+              secrets:
+                - source: backups_objectstore_s3_access_key_id
+                  target: storage-access-key.id
+                  uid: "0"
+                  gid: "${CONTAINER_GROUP_ID}"
+                  mode: 0440
+                - source: backups_objectstore_s3_secret_access_key
+                  target: storage-secret-access.key
+                  uid: "0"
+                  gid: "${CONTAINER_GROUP_ID}"
+                  mode: 0440
+              environment:
+                - "TZ=${TZ}"
+                - "UID=${CONTAINER_USER_ID}"
+                - "GID=${CONTAINER_GROUP_ID}"
+                - "AWS_S3_URL=${OBJECTSTORE_S3_URL}"
+                - "AWS_S3_BUCKET=${OBJECTSTORE_S3_BUCKET}"
+                - "AWS_S3_ACCESS_KEY_ID_FILE=/run/secrets/storage-access-key.id"
+                - "AWS_S3_SECRET_ACCESS_KEY_FILE=/run/secrets/storage-secret-access.key"
+                - "AWS_S3_AUTHFILE=${OBJECTSTORE_S3_AUTHFILE}"
+                - "AWS_S3_MOUNT=/opt/s3fs/bucket"
+                - "S3FS_ARGS=allow_root"
+                - "S3FS_DEBUG=0"
+              restart: unless-stopped
             duplicati:
-              image: lscr.io/linuxserver/duplicati
+              image: lscr.io/linuxserver/duplicati:latest
               container_name: duplicati
               hostname: backup.${SERVER_DOMAIN_NAME}
+              depends_on:
+                backupstore:
+                  condition: service_healthy
               security_opt:
                 - no-new-privileges
                 - label=disable
               volumes:
                 - "config:/config"
-                - "/opt/data/backups:/source:ro"
-                - "/var/run/docker.sock:/var/run/docker.sock:ro"
+                - "/opt/data/backups:/source:ro,z,rshared"
+              secrets:
+                - source: duplicati_admin_passwd
+                  target: admin_pwd
+                  uid: "0"
+                  gid: "${CONTAINER_GROUP_ID}"
+                  mode: 0440
               labels:
                 - "traefik.enable=true"
                 - "traefik.http.routers.duplicati.service=duplicati"
@@ -30,10 +103,11 @@ storage:
                 - "traefik.http.routers.duplicati.tls.certresolver=letsencryptresolver"
                 - "traefik.http.services.duplicati.loadbalancer.server.port=8200"
               environment:
-                - "PUID=${CORE_USER_ID}"
-                - "PGID=${DOCKER_GROUP_ID}"
                 - "TZ=${TZ}"
+                - "PUID=${CONTAINER_USER_ID}"
+                - "PGID=${CONTAINER_GROUP_ID}"
                 - "CLI_ARGS='--webservice-interface=loopback'"
+                - "FILE__PASSWORD=/run/secrets/admin_pwd"
               networks:
                 - traefik
               restart: unless-stopped
@@ -44,6 +118,13 @@ storage:
             traefik:
               name: backend
               external: true
+          secrets:
+            duplicati_admin_passwd:
+              file: "./secrets/duplicati_admin_passwd.secret"
+            backups_objectstore_s3_access_key_id:
+              file: "./secrets/backups_objectstore_s3_access_key_id.secret"
+            backups_objectstore_s3_secret_access_key:
+              file: "./secrets/backups_objectstore_s3_secret_access_key.secret"
   links:
     - path: /opt/systemd/duplicati/docker-compose-backup.sh
       target: /usr/local/bin/docker-compose-backup.sh
