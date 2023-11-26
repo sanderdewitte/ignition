@@ -28,12 +28,15 @@ fi
 # create temporary directory
 tmp_data_dir=$(mktemp -d -p "$data_dir")
 tmp_backup_dir="$tmp_data_dir/$backup_time"
-mkdir -p $tmp_backup_dir
+mkdir -p "$tmp_backup_dir"
 if [ -d "$tmp_backup_dir" ]; then
-  echo "[+] Backing up $project_name project to $tmp_backup_dir"
+  echo "[+] Backing up $project_name to $tmp_backup_dir"
 else
-  echo "[x] Could not create temporary directory ($tmp_backup_dir) for $project_name project backup"
-  [ -d $tmp_data_dir ] && rmdir $tmp_data_dir
+  echo "[x] Could not create temporary backup directory ($tmp_backup_dir) for $project_name backup"
+  [ -d "$tmp_data_dir" ] && rmdir $tmp_data_dir
+  if [ -d "$tmp_data_dir" ]; then
+    echo "[x] Could not remove temporary data directory ($tmp_data_dir) for $project_name backup"
+  fi
   exit 1
 fi
 
@@ -92,7 +95,7 @@ for service_name in $(docker compose config --services 2>/dev/null); do
   docker save --output "$service_dir/image.tar" "$image_id"
     
   if [[ -z "$container_id" ]]; then
-    echo "    - Warning: $service_name has no container yet."
+    echo "    - Warning: $service_name has no container yet"
     echo "         (has it been started at least once?)"
     continue
   fi
@@ -154,21 +157,21 @@ if [ -d "$project_backup_dir" ]; then
   tar -zcf "$project_backup_dir/$archive_name" --totals -C "$tmp_data_dir" "$backup_time"
   retval=$?
 else
-  echo "[x] $project_name project backup dir to archive backup does not exist and could not be created."
+  echo "[x] $project_name backup dir to archive backup does not exist and could not be created"
   exit 1
 fi
 
 # change owner/mode of archive and remove temporary backup directory
 if [ $retval -ne 0 ]; then
-  echo "[x] Something went wrong backing up $project_name to $archive_name."
+  echo "[x] Something went wrong backing up $project_name to $archive_name"
   exit 1
 else
   [ -f "$project_backup_dir/$archive_name" ] && chown ${CONTAINER_USER_ID:-0}:${CONTAINER_GROUP_ID:-0} "$project_backup_dir/$archive_name" && chmod 0640 "$project_backup_dir/$archive_name"
   [ -d "$tmp_data_dir" ] && rm -Rf "$tmp_data_dir"
   if [ -d "$tmp_data_dir" ]; then
-    echo "[x] Could not remove temporary directory ($tmp_data_dir) for $project_name backup."
+    echo "[x] Could not remove temporary data directory ($tmp_data_dir) for $project_name backup"
   fi
-  echo "[√] Finished backing up $project_name to $archive_name."
+  echo "[√] Finished backing up $project_name to $archive_name"
 fi
 
 exit 0
