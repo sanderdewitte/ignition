@@ -11,7 +11,8 @@ backup_time=$(date +"%y%m%dT%H%M")
 project_dir="${1:-$PWD}"
 project_name=$(basename "$project_dir")
 data_dir="/opt/data"
-project_backup_dir="$data_dir/backups/$project_name"
+backup_dir="$data_dir/backups"
+project_backup_dir="$backup_dir/$project_name"
 
 # exit if not a docker compose project
 if [ -f "$project_dir/docker-compose.yml" ]; then
@@ -146,32 +147,41 @@ done
 
 # archive backup
 retval=1
+only_archive_backup_when_mounted=1
 archive_name=${project_name}_container_backup_day${backup_day}.tgz 
-if [ -d "$project_backup_dir" ]; then
-  [ -f "$project_backup_dir/$archive_name" ] && rm -f "$project_backup_dir/$archive_name"
-else
-  mkdir -p "$project_backup_dir"
-fi
-if [ -d "$project_backup_dir" ]; then
-  echo "[*] Compressing backup folder to $archive_name"
-  tar -zcf "$project_backup_dir/$archive_name" --totals -C "$tmp_data_dir" "$backup_time"
-  retval=$?
-else
-  echo "[x] $project_name backup dir to archive backup does not exist and could not be created"
-  exit 1
-fi
-
-# change owner/mode of archive and remove temporary backup directory
-if [ $retval -ne 0 ]; then
-  echo "[x] Something went wrong backing up $project_name to $archive_name"
-  exit 1
-else
-  [ -f "$project_backup_dir/$archive_name" ] && chown ${CONTAINER_USER_ID:-0}:${CONTAINER_GROUP_ID:-0} "$project_backup_dir/$archive_name" && chmod 0640 "$project_backup_dir/$archive_name"
-  [ -d "$tmp_data_dir" ] && rm -Rf "$tmp_data_dir"
-  if [ -d "$tmp_data_dir" ]; then
-    echo "[x] Could not remove temporary data directory ($tmp_data_dir) for $project_name backup"
+if [ $only_archive_backup_when_mounted -eq 0 ] || mountpoint -q "$backup_dir"; then
+  if [ -d "$project_backup_dir" ]; then
+    [ -f "$project_backup_dir/$archive_name" ] && rm -f "$project_backup_dir/$archive_name"
+  else
+    mkdir -p "$project_backup_dir"
   fi
-  echo "[√] Finished backing up $project_name to $archive_name"
+  if [ -d "$project_backup_dir" ]; then
+    echo "[*] Compressing backup folder to $archive_name"
+    tar -zcf "$project_backup_dir/$archive_name" --totals -C "$tmp_data_dir" "$backup_time"
+    retval=$?
+  else
+    echo "[x] $project_name backup dir (to archive backup) does not exist and could not be created"
+  fi
 fi
 
-exit 0
+# change owner/mode of archive
+if [ $retval -eq 0 ]; then
+  [ -f "$project_backup_dir/$archive_name" ] && chown ${CONTAINER_USER_ID:-0}:${CONTAINER_GROUP_ID:-0} "$project_backup_dir/$archive_name" && chmod 0640 "$project_backup_dir/$archive_name"
+else
+  echo "[x] Something went wrong archiving backup for $project_name to $archive_name"
+fi
+
+# cleanup temporary directory
+[ -d "$tmp_data_dir" ] && rm -Rf "$tmp_data_dir"
+if [ -d "$tmp_data_dir" ]; then
+  echo "[x] Could not remove temporary data directory ($tmp_data_dir) for $project_name backup"
+  [ $retval -eq 0 ] && retval=1
+fi
+
+# exit gracefully
+if [ $retval -eq 0 ]; then
+  echo "[√] Finished backing up $project_name successfully"
+else
+  echo "[x] Finished backing up $project_name with errors"
+fi
+exit $retval
