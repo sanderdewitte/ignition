@@ -29,6 +29,14 @@ storage:
         name: root
       group:
         name: docker
+    - path: "/opt/systemd/traefik/secrets/netdata_admin.secret"
+      mode: 0440
+      contents:
+        local: files/netdata_admin.secret
+      user:
+        name: root
+      group:
+        name: docker
     - path: "/opt/systemd/traefik/docker-compose.yml"
       mode: 0644
       contents:
@@ -90,6 +98,7 @@ storage:
               secrets:
                 - "vultr_api_key"
                 - "traefik_admin_credentials"
+                - "netdata_admin_credentials"
               environment:
                 - "TZ=${TZ}"
                 - "VULTR_API_KEY_FILE=/run/secrets/vultr_api_key"
@@ -103,6 +112,8 @@ storage:
               file: "./secrets/vultr_api_key.secret"
             traefik_admin_credentials:
               file: "./secrets/traefik_admin.secret"
+            netdata_admin_credentials:
+              file: "./secrets/netdata_admin.secret"
           networks:
             traefik:
               name: backend
