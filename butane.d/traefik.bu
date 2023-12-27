@@ -84,6 +84,9 @@ storage:
                 - "traefik.http.routers.traefik.tls.certresolver=letsencryptresolver"
                 - "traefik.http.routers.traefik.middlewares=traefik-auth"
                 - "traefik.http.middlewares.traefik-auth.basicauth.usersfile=/run/secrets/traefik_admin_credentials"
+                - "traefik.http.middlewares.traefik-auth.basicauth.realm=RouterCredentials"
+                - "traefik.http.middlewares.traefik-auth.basicauth.headerField=X-WebAuth-User"
+                - "traefik.http.middlewares.traefik-auth.basicauth.removeheader=false"
               secrets:
                 - "vultr_api_key"
                 - "traefik_admin_credentials"
