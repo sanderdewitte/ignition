@@ -95,4 +95,4 @@ systemd:
       Unit=backup.docker.dashmachine.service
 
       [Install]
-      WantedBy=multi-user.target
+      WantedBy=timer.target

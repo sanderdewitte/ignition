@@ -105,4 +105,4 @@ systemd:
       Unit=backup.docker.netdata.service
 
       [Install]
-      WantedBy=multi-user.target
+      WantedBy=timer.target

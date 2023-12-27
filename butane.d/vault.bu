@@ -115,4 +115,4 @@ systemd:
       Unit=backup.docker.vault.service
 
       [Install]
-      WantedBy=multi-user.target
+      WantedBy=timer.target
