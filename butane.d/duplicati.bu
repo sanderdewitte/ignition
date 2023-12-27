@@ -179,4 +179,4 @@ systemd:
       Unit=backup.docker.duplicati.service
 
       [Install]
-      WantedBy=timer.target
+      WantedBy=timers.target

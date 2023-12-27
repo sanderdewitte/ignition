@@ -93,4 +93,4 @@ systemd:
       Unit=backup.docker.syncthing.service
 
       [Install]
-      WantedBy=timer.target
+      WantedBy=timers.target

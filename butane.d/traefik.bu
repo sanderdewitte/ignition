@@ -159,4 +159,4 @@ systemd:
       Unit=backup.docker.traefik.service
       
       [Install]
-      WantedBy=timer.target
+      WantedBy=timers.target

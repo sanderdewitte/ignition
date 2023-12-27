@@ -203,4 +203,4 @@ systemd:
       Unit=backup.docker.imapfilter.service
 
       [Install]
-      WantedBy=timer.target
+      WantedBy=timers.target

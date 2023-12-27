@@ -116,4 +116,4 @@ systemd:
       Unit=backup.docker.portainer.service
 
       [Install]
-      WantedBy=timer.target
+      WantedBy=timers.target

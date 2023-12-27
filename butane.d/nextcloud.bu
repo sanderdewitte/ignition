@@ -346,4 +346,4 @@ systemd:
       Unit=backup.docker.nextcloud.service
 
       [Install]
-      WantedBy=timer.target
+      WantedBy=timers.target
