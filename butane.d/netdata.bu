@@ -11,31 +11,68 @@ storage:
         inline: |-
           version: '3.9'
           services:
+            netdata-vol-init:
+              image: bitnami/minideb:latest
+              container_name: netdata-vol-init
+              security_opt:
+                - no-new-privileges
+                - label=disable
+              user: "root"
+              group_add:
+                - "${CONTAINER_GROUP_ID}"
+              command: >
+                chown -R ${CONTAINER_USER_ID}:${CONTAINER_GROUP_ID} /tmp/change-ownership-config &&
+                chown -R ${CONTAINER_USER_ID}:${CONTAINER_GROUP_ID} /tmp/change-ownership-lib &&
+                chown -R ${CONTAINER_USER_ID}:${CONTAINER_GROUP_ID} /tmp/change-ownership-cache
+              volumes:
+                - "config:/tmp/change-ownership-config"
+                - "lib:/tmp/change-ownership-lib"
+                - "cache:/tmp/change-ownership-cache"
             netdata:
               image: netdata/netdata
               container_name: netdata
               hostname: monitor.${SERVER_DOMAIN_NAME}
+              depends_on:
+                netdata-vol-init:
+                  condition: service_completed_successfully
               cap_add:
                 - SYS_PTRACE
+                - SYS_ADMIN
               security_opt:
                 - no-new-privileges
                 - seccomp:unconfined
                 - apparmor:unconfined
+                - label=disable
               volumes:
                 - "config:/etc/netdata"
                 - "lib:/var/lib/netdata"
                 - "cache:/var/cache/netdata"
                 - "/proc:/host/proc:ro"
                 - "/sys:/host/sys:ro"
+                - "/etc/passwd:/host/etc/passwd:ro"
+                - "/etc/group:/host/etc/group:ro"
+                - "/etc/os-release:/host/etc/os-release:ro"
+                - "/var/log:/host/var/log:ro"
+                - "/host/var/log/journal"
                 - "/var/run/docker.sock:/var/run/docker.sock:ro"
               labels:
                 - "traefik.enable=true"
-                - "traefik.http.routers.netdata.service=netdata"
                 - "traefik.http.routers.netdata.rule=Host(`monitor.${SERVER_DOMAIN_NAME}`)"
                 - "traefik.http.routers.netdata.entrypoints=websecure"
                 - "traefik.http.routers.netdata.tls.certresolver=letsencryptresolver"
+                - "traefik.http.routers.netdata.service=netdata"
                 - "traefik.http.services.netdata.loadbalancer.server.port=19999"
+                - "traefik.http.routers.netdata.middlewares=netdata-auth"
+                - "traefik.http.middlewares.netdata-auth.basicauth.usersfile=/run/secrets/netdata_admin_credentials"
+                - "traefik.http.middlewares.netdata-auth.basicauth.realm=MonitorCredentials"
+                - "traefik.http.middlewares.netdata-auth.basicauth.headerfield=X-WebAuth-User"
+                - "traefik.http.middlewares.netdata-auth.basicauth.removeheader=false"
               environment:
+                - "DO_NOT_TRACK=1"
+                - "NETDATA_EXTRA_DEB_PACKAGES=netcat-openbsd"
+                - "DOCKER_HOST=localhost:19999"
+                - "PUID=${CONTAINER_USER_ID}"
+                - "PGID=${CONTAINER_GROUP_ID}"
                 - "TZ=${TZ}"
               networks:
                 - traefik
