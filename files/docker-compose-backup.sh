@@ -5,74 +5,82 @@ set -o nounset
 # including images, named/unnamed volumes,
 # container filesystems, config and logs 
 
-backup_day=$(date +"%u")
-backup_time=$(date +"%y%m%dT%H%M")
-
-project_dir="${1:-$PWD}"
-project_name=$(basename "$project_dir")
-data_dir="/opt/data"
-backup_dir="$data_dir/backups"
-project_backup_dir="$backup_dir/$project_name"
+# configuration
+PROJECT_DIR="${1:-$PWD}"
+PROJECT_NAME="$(basename "$PROJECT_DIR")"
+DATA_DIR="/opt/data"
+BACKUP_DIR="$DATA_DIR/backups"
+PROJECT_BACKUP_DIR="$BACKUP_DIR/$PROJECT_NAME"
+ONLY_ARCHIVE_BACKUP_WHEN_BACKUP_DIR_MOUNTED=1
 
 # exit if not a docker compose project
-if [ -f "$project_dir/docker-compose.yml" ]; then
-  echo "[i] Found docker compose config at $project_dir/docker-compose.yml"
+if [ -f "$PROJECT_DIR/docker-compose.yml" ]; then
+  echo "[i] Found docker compose config at $PROJECT_DIR/docker-compose.yml"
 else
-  echo "[x] Could not find a docker-compose.yml file in $project_dir"
+  echo "[x] Could not find a docker-compose.yml file in $PROJECT_DIR"
   exit 1
 fi
 
 # source environment variables
-[ -f "$project_dir/docker-compose.env" ] && source "$project_dir/docker-compose.env"
-[ -f "$project_dir/.env" ] && source "$project_dir/.env"
+[ -f "$PROJECT_DIR/docker-compose.env" ] && source "$PROJECT_DIR/docker-compose.env"
+[ -f "$PROJECT_DIR/.env" ] && source "$PROJECT_DIR/.env"
 
-# create temporary directory
-tmp_data_dir=$(mktemp -d -p "$data_dir")
-tmp_backup_dir="$tmp_data_dir/$backup_time"
-mkdir -p "$tmp_backup_dir"
-if [ -d "$tmp_backup_dir" ]; then
-  echo "[+] Backing up $project_name to $tmp_backup_dir"
+# timestamp
+BACKUP_DAY=$(date +"%u")
+BACKUP_TIME=$(date +"%y%m%dT%H%M")
+
+# create temporary directory and define how to clean it
+TMP_DATA_DIR=$(mktemp -d -p "$DATA_DIR")
+function cleanup {
+  [ -d "$TMP_DATA_DIR" ] && rm -Rf "$TMP_DATA_DIR"
+}
+trap cleanup EXIT
+trap cleanup SIGINT
+
+# create temporary backup directory
+TMP_BACKUP_DIR="$TMP_DATA_DIR/$BACKUP_TIME"
+mkdir -p "$TMP_BACKUP_DIR"
+if [ -d "$TMP_BACKUP_DIR" ]; then
+  echo "[+] Backing up $PROJECT_NAME to $TMP_BACKUP_DIR"
 else
-  echo "[x] Could not create temporary backup directory ($tmp_backup_dir) for $project_name backup"
-  [ -d "$tmp_data_dir" ] && rmdir $tmp_data_dir
-  if [ -d "$tmp_data_dir" ]; then
-    echo "[x] Could not remove temporary data directory ($tmp_data_dir) for $project_name backup"
-  fi
+  echo "[x] Could not create temporary backup directory ($TMP_BACKUP_DIR) for $PROJECT_NAME backup"
   exit 1
 fi
 
 # backup docker-compose.yml
 echo "    - Saving docker-compose.yml config"
-cp "$project_dir/docker-compose.yml" "$tmp_backup_dir/docker-compose.yml"
+cp "$PROJECT_DIR/docker-compose.yml" "$TMP_BACKUP_DIR/docker-compose.yml"
 
 # run command inside container to dump application state/database to a stable file
 echo "    - Saving application state to ./dumps"
-db_containers=("nextcloud-mariadb" "nextcloud-redis")
-mkdir -p "$tmp_backup_dir/dumps"
-for db_container in "${db_containers[@]}"; do
+DB_CONTAINERS=("nextcloud-mariadb" "nextcloud-redis")
+mkdir -p "$TMP_BACKUP_DIR/dumps"
+for DB_CONTAINER in "${DB_CONTAINERS[@]}"; do
 
-  [[ $db_container != ${project_name}* ]] && continue
+  [[ $DB_CONTAINER != ${PROJECT_NAME}* ]] && continue
 
-  if [[ $db_container == *db ]]; then
-    archive_name=${project_name}_db_dump_day${backup_day}.sql.gz
-    secrets_file=secrets/${project_name}_db_root.secret
-    if [ -f $secrets_file ]; then
-      read -r host_dir container_dir <<< $(docker inspect -f '{{range .Mounts}}{{if eq "volume" .Type}}{{println .Source .Destination}}{{end}}{{end}}' $db_container | head -1)
-      echo -e "[mysqldump]\nuser=root\npassword=$(cat -- "$secrets_file")" > $host_dir/.my.cnf
-      if  [ -f $host_dir/.my.cnf ]; then
-        chmod 0600 $host_dir/.my.cnf
-        docker exec $db_container mysqldump --defaults-file=$container_dir/.my.cnf --skip-lock-tables --single-transaction --all-databases | gzip -9 > $tmp_backup_dir/dumps/$archive_name
-        rm -f $host_dir/.my.cnf
+  unset ARCHIVE_NAME
+
+  if [[ $DB_CONTAINER == *db ]]; then
+    ARCHIVE_NAME=${PROJECT_NAME}_db_dump_day${BACKUP_DAY}.sql.gz
+    SECRETS_FILE=secrets/${PROJECT_NAME}_db_root.secret
+    if [ -f $SECRETS_FILE ]; then
+      read -r HOST_DIR CONTAINER_DIR <<< $(docker inspect -f '{{range .Mounts}}{{if eq "volume" .Type}}{{println .Source .Destination}}{{end}}{{end}}' $DB_CONTAINER | head -1)
+      echo -e "[mysqldump]\nuser=root\npassword=$(cat -- "$SECRETS_FILE")" > $HOST_DIR/.my.cnf
+      if  [ -f $HOST_DIR/.my.cnf ]; then
+        chmod 0600 $HOST_DIR/.my.cnf
+        docker exec $DB_CONTAINER mysqldump --defaults-file=$CONTAINER_DIR/.my.cnf --skip-lock-tables --single-transaction --all-databases | gzip -9 > $TMP_BACKUP_DIR/dumps/$ARCHIVE_NAME
+        rm -f $HOST_DIR/.my.cnf
       fi
     fi
   fi
 
-  if [[ $db_container == *redis ]]; then
-    archive_name=${project_name}_redis_dump_day${backup_day}.rdb.gz
-    redis_dir=/data
-    redis_save_result=$(docker exec $db_container /usr/local/bin/redis-cli -e SAVE)
-    if [[ "$redis_save_result" == "OK" ]]; then
-      docker exec $db_container cat $redis_dir/dump.rdb | gzip -9 > "$tmp_backup_dir/dumps/$archive_name"
+  if [[ $DB_CONTAINER == *redis ]]; then
+    ARCHIVE_NAME=${PROJECT_NAME}_redis_dump_day${BACKUP_DAY}.rdb.gz
+    REDIS_DIR=/data
+    REDIS_SAVE_RESULT=$(docker exec $DB_CONTAINER /usr/local/bin/redis-cli -e SAVE)
+    if [[ "$REDIS_SAVE_RESULT" == "OK" ]]; then
+      docker exec $DB_CONTAINER cat $REDIS_DIR/dump.rdb | gzip -9 > "$TMP_BACKUP_DIR/dumps/$ARCHIVE_NAME"
     fi
   fi
 
@@ -81,64 +89,64 @@ done
 # optional: pause the containers before backing up to ensure consistency
 # docker compose pause
 
-for service_name in $(docker compose config --services 2>/dev/null); do
+for SERVICE_NAME in $(docker compose config --services 2>/dev/null); do
 
-  image_id=$(docker compose images -q "$service_name" 2>/dev/null)
-  image_name=$(docker image inspect --format '{{json .RepoTags}}' "$image_id" | jq -r '.[0]')
-  container_id=$(docker compose ps -q "$service_name" 2>/dev/null)
+  IMAGE_ID=$(docker compose images -q "$SERVICE_NAME" 2>/dev/null)
+  IMAGE_NAME=$(docker image inspect --format '{{json .RepoTags}}' "$IMAGE_ID" | jq -r '.[0]')
+  CONTAINER_ID=$(docker compose ps -q "$SERVICE_NAME" 2>/dev/null)
 
-  service_dir="$tmp_backup_dir/$service_name"
-  echo "[*] Backing up Proj_${project_name}_Serv_${service_name} to ./$service_name"
-  mkdir -p "$service_dir"
+  SERVICE_DIR="$TMP_BACKUP_DIR/$SERVICE_NAME"
+  echo "[*] Backing up Proj_${PROJECT_NAME}_Serv_${SERVICE_NAME} to ./$SERVICE_NAME"
+  mkdir -p "$SERVICE_DIR"
     
   # save image
-  echo "    - Saving $image_name image to ./$service_name/image.tar"
-  docker save --output "$service_dir/image.tar" "$image_id"
+  echo "    - Saving $IMAGE_NAME image to ./$SERVICE_NAME/image.tar"
+  docker save --output "$SERVICE_DIR/image.tar" "$IMAGE_ID"
     
-  if [[ -z "$container_id" ]]; then
-    echo "    - Warning: $service_name has no container yet"
+  if [[ -z "$CONTAINER_ID" ]]; then
+    echo "    - Warning: $SERVICE_NAME has no container yet"
     echo "         (has it been started at least once?)"
     continue
   fi
 
   # save config
-  echo "    - Saving container config to ./$service_name/config.json"
-  docker inspect "$container_id" > "$service_dir/config.json"
+  echo "    - Saving container config to ./$SERVICE_NAME/config.json"
+  docker inspect "$CONTAINER_ID" > "$SERVICE_DIR/config.json"
 
   # save logs
-  echo "    - Saving stdout/stderr logs to ./$service_name/docker.{out,err}"
-  docker logs "$container_id" > "$service_dir/docker.out" 2> "$service_dir/docker.err"
+  echo "    - Saving stdout/stderr logs to ./$SERVICE_NAME/docker.{out,err}"
+  docker logs "$CONTAINER_ID" > "$SERVICE_DIR/docker.out" 2> "$SERVICE_DIR/docker.err"
 
   # save data volumes
-  skip_volumes=("/sys" "/proc" "/var/run/docker.sock")
+  SKIP_VOLUMES=("/sys" "/proc" "/var/run/docker.sock")
   if [ -n "${BACKUP_SKIP_VOLUMES:-}" ]; then
-    skip_volumes+=("${BACKUP_SKIP_VOLUMES[@]}")
+    SKIP_VOLUMES+=("${BACKUP_SKIP_VOLUMES[@]}")
   fi
-  mkdir -p "$service_dir/volumes"
-  for source in $(docker inspect -f '{{range .Mounts}}{{println .Source}}{{end}}' "$container_id"); do
-    [[ $source == *.secret ]] && continue
-    skip=0 
-    for skip_volume in "${skip_volumes[@]}"; do
-      if [[ "$source" = "$skip_volume" ]]; then
-        skip=1
+  mkdir -p "$SERVICE_DIR/volumes"
+  for SOURCE in $(docker inspect -f '{{range .Mounts}}{{println .Source}}{{end}}' "$CONTAINER_ID"); do
+    [[ $SOURCE == *.secret ]] && continue
+    SKIP=0 
+    for SKIP_VOLUME in "${SKIP_VOLUMES[@]}"; do
+      if [[ "$SOURCE" = "$SKIP_VOLUME" ]]; then
+        SKIP=1
 	break
       fi
     done
-    if [[ $skip = 0 ]]; then
-      volume_dir="$service_dir/volumes$source"
-      echo "    - Saving $source volume to ./$service_name/volumes$source"
-      mkdir -p $(dirname "$volume_dir")
-      cp -a -r "$source" "$volume_dir"
+    if [[ $SKIP = 0 ]]; then
+      VOLUME_DIR="$SERVICE_DIR/volumes$SOURCE"
+      echo "    - Saving $SOURCE volume to ./$SERVICE_NAME/volumes$SOURCE"
+      mkdir -p $(dirname "$VOLUME_DIR")
+      cp -a -r "$SOURCE" "$VOLUME_DIR"
     fi
   done
 
   # save container filesystem
-  echo "    - Saving container filesystem to ./$service_name/container.tar"
-  docker export --output "$service_dir/container.tar" "$container_id"
+  echo "    - Saving container filesystem to ./$SERVICE_NAME/container.tar"
+  docker export --output "$SERVICE_DIR/container.tar" "$CONTAINER_ID"
 
   # save entire container root dir
-  echo "    - Saving container root to ./$service_name/root"
-  cp -a -r "/var/lib/docker/containers/$container_id" "$service_dir/root"
+  echo "    - Saving container root to ./$SERVICE_NAME/root"
+  cp -a -r "/var/lib/docker/containers/$CONTAINER_ID" "$SERVICE_DIR/root"
 
 done
 
@@ -146,42 +154,34 @@ done
 # docker compose unpause
 
 # archive backup
-retval=1
-only_archive_backup_when_mounted=1
-archive_name=${project_name}_container_backup_day${backup_day}.tgz 
-if [ $only_archive_backup_when_mounted -eq 0 ] || mountpoint -q "$backup_dir"; then
-  if [ -d "$project_backup_dir" ]; then
-    [ -f "$project_backup_dir/$archive_name" ] && rm -f "$project_backup_dir/$archive_name"
+ARCHIVE_RETVAL=1
+ARCHIVE_NAME=${PROJECT_NAME}_container_backup_day${BACKUP_DAY}.tgz 
+if [ $ONLY_ARCHIVE_BACKUP_WHEN_BACKUP_DIR_MOUNTED -eq 0 ] || mountpoint -q "$BACKUP_DIR"; then
+  if [ -d "$PROJECT_BACKUP_DIR" ]; then
+    [ -f "$PROJECT_BACKUP_DIR/$ARCHIVE_NAME" ] && rm -f "$PROJECT_BACKUP_DIR/$ARCHIVE_NAME"
   else
-    mkdir -p "$project_backup_dir"
+    mkdir -p "$PROJECT_BACKUP_DIR"
   fi
-  if [ -d "$project_backup_dir" ]; then
-    echo "[*] Compressing backup folder to $archive_name"
-    tar -zcf "$project_backup_dir/$archive_name" --totals -C "$tmp_data_dir" "$backup_time"
-    retval=$?
+  if [ -d "$PROJECT_BACKUP_DIR" ]; then
+    echo "[*] Compressing temporary backup folder to $ARCHIVE_NAME"
+    tar -zcf "$PROJECT_BACKUP_DIR/$ARCHIVE_NAME" --totals -C "$TMP_DATA_DIR" "$BACKUP_TIME"
+    ARCHIVE_RETVAL=$?
   else
-    echo "[x] $project_name backup dir (to archive backup) does not exist and could not be created"
+    echo "[x] $PROJECT_NAME backup dir (to archive backup) does not exist and could not be created"
   fi
-fi
+fi 
 
 # change owner/mode of archive
-if [ $retval -eq 0 ]; then
-  [ -f "$project_backup_dir/$archive_name" ] && chown ${CONTAINER_USER_ID:-0}:${CONTAINER_GROUP_ID:-0} "$project_backup_dir/$archive_name" && chmod 0640 "$project_backup_dir/$archive_name"
+if [ $ARCHIVE_RETVAL -eq 0 ]; then
+  [ -f "$PROJECT_BACKUP_DIR/$ARCHIVE_NAME" ] && chown ${CONTAINER_USER_ID:-0}:${CONTAINER_GROUP_ID:-0} "$PROJECT_BACKUP_DIR/$ARCHIVE_NAME" && chmod 0640 "$PROJECT_BACKUP_DIR/$ARCHIVE_NAME"
 else
-  echo "[x] Something went wrong archiving backup for $project_name to $archive_name"
-fi
-
-# cleanup temporary directory
-[ -d "$tmp_data_dir" ] && rm -Rf "$tmp_data_dir"
-if [ -d "$tmp_data_dir" ]; then
-  echo "[x] Could not remove temporary data directory ($tmp_data_dir) for $project_name backup"
-  [ $retval -eq 0 ] && retval=1
+  echo "[x] Something went wrong archiving backup for $PROJECT_NAME to $ARCHIVE_NAME"
 fi
 
 # exit gracefully
-if [ $retval -eq 0 ]; then
-  echo "[√] Finished backing up $project_name successfully"
+if [ $ARCHIVE_RETVAL -eq 0 ]; then
+  echo "[√] Finished backing up $PROJECT_NAME successfully"
 else
-  echo "[x] Finished backing up $project_name with errors"
+  echo "[x] Finished backing up $PROJECT_NAME with errors"
 fi
-exit $retval
+exit $ARCHIVE_RETVAL
