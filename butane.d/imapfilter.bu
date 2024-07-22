@@ -154,52 +154,52 @@ storage:
       target: /usr/local/bin/docker-compose-backup.sh
 systemd:
   units:
-  - name: docker.imapfilter.service
-    enabled: true
-    contents: |-
-      [Unit]
-      Description=Imapfilter Container
-      After=network-online.target docker.service docker.traefik.service
-      Requires=network.target network-online.target docker.service docker.traefik.service
-      
-      [Service]
-      Type=oneshot
-      TimeoutStartSec=0
-      RemainAfterExit=true
-      EnvironmentFile=-/etc/sysconfig/coreos.env
-      WorkingDirectory=/opt/systemd/imapfilter/
-      ExecStartPre=-/usr/bin/docker compose down
-      ExecStartPre=-/usr/bin/docker compose rm
-      ExecStartPre=-/usr/bin/docker compose pull
-      ExecStart=/usr/bin/docker compose up -d
-      ExecStop=/usr/bin/docker compose down
-      
-      [Install]
-      WantedBy=multi-user.target
-  - name: backup.docker.imapfilter.service
-    enabled: true
-    contents: |-
-      [Unit]
-      Description=Backup Imapfilter Container
-      After=docker.imapfilter.service
-      Requires=docker.imapfilter.service
-
-      [Service]
-      Type=oneshot
-      EnvironmentFile=-/etc/sysconfig/coreos.env
-      WorkingDirectory=/opt/systemd/imapfilter/
-      ExecStart=/opt/systemd/imapfilter/docker-compose-backup.sh
-
-      [Install]
-      WantedBy=backup.docker.imapfilter.timer
-  - name: backup.docker.imapfilter.timer
-    enabled: true
-    contents: |-
-      [Unit]
-      Description=Backup Imapfilter Container at 01:20 daily
-
-      [Timer]
-      OnCalendar=*-*-* 01:20:00
-
-      [Install]
-      WantedBy=timers.target
+    - name: docker.imapfilter.service
+      enabled: true
+      contents: |-
+        [Unit]
+        Description=Imapfilter Container
+        After=network-online.target docker.service docker.traefik.service
+        Requires=network.target network-online.target docker.service docker.traefik.service
+        
+        [Service]
+        Type=oneshot
+        TimeoutStartSec=0
+        RemainAfterExit=true
+        EnvironmentFile=-/etc/sysconfig/coreos.env
+        WorkingDirectory=/opt/systemd/imapfilter/
+        ExecStartPre=-/usr/bin/docker compose down
+        ExecStartPre=-/usr/bin/docker compose rm
+        ExecStartPre=-/usr/bin/docker compose pull
+        ExecStart=/usr/bin/docker compose up -d
+        ExecStop=/usr/bin/docker compose down
+        
+        [Install]
+        WantedBy=multi-user.target
+    - name: backup.docker.imapfilter.service
+      enabled: true
+      contents: |-
+        [Unit]
+        Description=Backup Imapfilter Container
+        After=docker.imapfilter.service
+        Requires=docker.imapfilter.service
+  
+        [Service]
+        Type=oneshot
+        EnvironmentFile=-/etc/sysconfig/coreos.env
+        WorkingDirectory=/opt/systemd/imapfilter/
+        ExecStart=/opt/systemd/imapfilter/docker-compose-backup.sh
+  
+        [Install]
+        WantedBy=backup.docker.imapfilter.timer
+    - name: backup.docker.imapfilter.timer
+      enabled: true
+      contents: |-
+        [Unit]
+        Description=Backup Imapfilter Container at 01:20 daily
+  
+        [Timer]
+        OnCalendar=*-*-* 01:20:00
+  
+        [Install]
+        WantedBy=timers.target

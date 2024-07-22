@@ -67,52 +67,52 @@ storage:
       target: /usr/local/bin/docker-compose-backup.sh
 systemd:
   units:
-  - name: docker.portainer.service
-    enabled: true
-    contents: |-
-      [Unit]
-      Description=Portainer Admin Container
-      After=network-online.target docker.service docker.traefik.service
-      Requires=network.target network-online.target docker.service docker.traefik.service
-
-      [Service]
-      Type=oneshot
-      TimeoutStartSec=0
-      RemainAfterExit=true
-      EnvironmentFile=-/etc/sysconfig/coreos.env
-      WorkingDirectory=/opt/systemd/portainer/
-      ExecStartPre=-/usr/bin/docker compose down
-      ExecStartPre=-/usr/bin/docker compose rm
-      ExecStartPre=-/usr/bin/docker compose pull
-      ExecStart=/usr/bin/docker compose up -d
-      ExecStop=/usr/bin/docker compose down
-
-      [Install]
-      WantedBy=multi-user.target
-  - name: backup.docker.portainer.service
-    enabled: true
-    contents: |-
-      [Unit]
-      Description=Backup Portainer Admin Container
-      After=docker.portainer.service
-      Requires=docker.portainer.service
-
-      [Service]
-      Type=oneshot
-      EnvironmentFile=-/etc/sysconfig/coreos.env
-      WorkingDirectory=/opt/systemd/portainer/
-      ExecStart=/opt/systemd/portainer/docker-compose-backup.sh
-
-      [Install]
-      WantedBy=backup.docker.portainer.timer
-  - name: backup.docker.portainer.timer
-    enabled: true
-    contents: |-
-      [Unit]
-      Description=Backup Portainer Admin Container at 01:40 daily
-
-      [Timer]
-      OnCalendar=*-*-* 01:40:00
-
-      [Install]
-      WantedBy=timers.target
+    - name: docker.portainer.service
+      enabled: true
+      contents: |-
+        [Unit]
+        Description=Portainer Admin Container
+        After=network-online.target docker.service docker.traefik.service
+        Requires=network.target network-online.target docker.service docker.traefik.service
+  
+        [Service]
+        Type=oneshot
+        TimeoutStartSec=0
+        RemainAfterExit=true
+        EnvironmentFile=-/etc/sysconfig/coreos.env
+        WorkingDirectory=/opt/systemd/portainer/
+        ExecStartPre=-/usr/bin/docker compose down
+        ExecStartPre=-/usr/bin/docker compose rm
+        ExecStartPre=-/usr/bin/docker compose pull
+        ExecStart=/usr/bin/docker compose up -d
+        ExecStop=/usr/bin/docker compose down
+  
+        [Install]
+        WantedBy=multi-user.target
+    - name: backup.docker.portainer.service
+      enabled: true
+      contents: |-
+        [Unit]
+        Description=Backup Portainer Admin Container
+        After=docker.portainer.service
+        Requires=docker.portainer.service
+  
+        [Service]
+        Type=oneshot
+        EnvironmentFile=-/etc/sysconfig/coreos.env
+        WorkingDirectory=/opt/systemd/portainer/
+        ExecStart=/opt/systemd/portainer/docker-compose-backup.sh
+  
+        [Install]
+        WantedBy=backup.docker.portainer.timer
+    - name: backup.docker.portainer.timer
+      enabled: true
+      contents: |-
+        [Unit]
+        Description=Backup Portainer Admin Container at 01:40 daily
+  
+        [Timer]
+        OnCalendar=*-*-* 01:40:00
+  
+        [Install]
+        WantedBy=timers.target
