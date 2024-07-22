@@ -343,7 +343,6 @@ systemd:
 
       [Timer]
       OnCalendar=*-*-* 02:00:00
-      Unit=backup.docker.nextcloud.service
 
       [Install]
       WantedBy=timers.target

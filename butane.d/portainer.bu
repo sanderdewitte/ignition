@@ -113,7 +113,6 @@ systemd:
 
       [Timer]
       OnCalendar=*-*-* 01:40:00
-      Unit=backup.docker.portainer.service
 
       [Install]
       WantedBy=timers.target

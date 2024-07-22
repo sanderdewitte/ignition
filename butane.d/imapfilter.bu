@@ -200,7 +200,6 @@ systemd:
 
       [Timer]
       OnCalendar=*-*-* 01:20:00
-      Unit=backup.docker.imapfilter.service
 
       [Install]
       WantedBy=timers.target

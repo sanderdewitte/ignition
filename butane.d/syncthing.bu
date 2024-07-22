@@ -90,7 +90,6 @@ systemd:
 
       [Timer]
       OnCalendar=*-*-* 01:50:00
-      Unit=backup.docker.syncthing.service
 
       [Install]
       WantedBy=timers.target

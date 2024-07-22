@@ -112,7 +112,6 @@ systemd:
 
       [Timer]
       OnCalendar=*-*-* 02:20:00
-      Unit=backup.docker.vault.service
 
       [Install]
       WantedBy=timers.target
