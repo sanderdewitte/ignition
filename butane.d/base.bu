@@ -95,3 +95,27 @@ systemd:
 
         [Install]
         WantedBy=multi-user.target
+    - name: docker.prune.service
+      enabled: true
+      contents: |-
+        [Unit]
+        Description=Docker cleanup service (with time filter)
+        
+        [Service]
+        Type=oneshot
+        ExecStart=/usr/bin/sh -c '/usr/bin/docker system prune -af --filter "until=$((30*24))h"'
+        
+        [Install]
+        WantedBy=multi-user.target
+    - name: docker.prune.timer
+      enabled: true
+      contents: |-
+        [Unit]
+        Description=Run Docker cleanup (docker.prune.service) every weekday at 1 minute past midnight
+        
+        [Timer]
+        OnCalendar=Mon,Tue,Wed,Thu,Fri *-*-* 00:01:00
+        Persistent=true
+        
+        [Install]
+        WantedBy=timers.target
