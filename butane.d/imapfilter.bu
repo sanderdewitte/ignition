@@ -23,7 +23,7 @@ storage:
       mode: 0660
       group:
         id: 1001
-    - path: "/etc/logrotate.d/docker-imapfilter
+    - path: "/etc/logrotate.d/docker-imapfilter"
       mode: 0644
       contents:
         inline: |-
