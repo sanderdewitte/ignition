@@ -23,6 +23,23 @@ storage:
       mode: 0660
       group:
         id: 1001
+    - path: "/etc/logrotate.d/docker-imapfilter
+      mode: 0644
+      contents:
+        inline: |-
+          /var/log/imapfilter/*.log {
+            weekly
+            minsize 1M
+            rotate 12
+            compress
+            missingok
+            notifempty
+            create 0660 root 1001
+            sharedscripts
+            postrotate
+              /usr/bin/systemctl restart docker.imapfilter.service
+            endscript
+          }
     - path: "/opt/systemd/imapfilter/secrets/sanderdewitte_com.secret"
       mode: 0440
       contents:
