@@ -42,7 +42,7 @@ storage:
           version: '3.9'
           services:
             backupstore:
-              image: efrecon/s3fs:1.93
+              image: efrecon/s3fs:1.94
               container_name: backups-s3fs
               cap_add:
                 - SYS_ADMIN
