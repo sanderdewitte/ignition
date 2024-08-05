@@ -46,6 +46,8 @@ storage:
           [Service]
           Environment="SERVER_DOMAIN_NAME=sanderdewitte.com"
           Environment="ADDITIONAL_DOMAIN_NAME_01=sanderdewitte.nl"
+          Environment="ADDITIONAL_DOMAIN_NAME_02=mnqmusic.com"
+          Environment="ADDITIONAL_DOMAIN_NAME_03=mnqphotography.com"
     - path: /etc/systemd/system/coreos-env.service.d/timezone.conf
       mode: 0644
       contents:
