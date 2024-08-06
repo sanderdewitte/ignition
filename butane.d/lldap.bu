@@ -1,0 +1,226 @@
+variant: fcos
+version: 1.5.0
+storage:
+  directories:
+    - path: "/opt/systemd/lldap"
+      mode: 0755
+    - path: "/opt/systemd/lldap/secrets"
+      mode: 0750
+  files:
+    - path: "/opt/systemd/lldap/secrets/lldap_sanderdewitte.com_admin.secret"
+      mode: 0440
+      contents:
+        local: files/lldap_sanderdewitte.com_admin.secret
+      user:
+        name: root
+      group:
+        name: container-group-1001
+    - path: "/opt/systemd/lldap/secrets/lldap_sanderdewitte.com_jwt.secret"
+      mode: 0440
+      contents:
+        local: files/lldap_sanderdewitte.com_jwt.secret
+      user:
+        name: root
+      group:
+        name: container-group-1001
+    - path: "/opt/systemd/lldap/secrets/lldap_sanderdewitte.com_key_seed.secret"
+      mode: 0440
+      contents:
+        local: files/lldap_sanderdewitte.com_key_seed.secret
+      user:
+        name: root
+      group:
+        name: container-group-1001
+    - path: "/opt/systemd/lldap/secrets/lldap_sanderdewitte.nl_admin.secret"
+      mode: 0440
+      contents:
+        local: files/lldap_sanderdewitte.nl_admin.secret
+      user:
+        name: root
+      group:
+        name: container-group-1001
+    - path: "/opt/systemd/lldap/secrets/lldap_sanderdewitte.nl_jwt.secret"
+      mode: 0440
+      contents:
+        local: files/lldap_sanderdewitte.nl_jwt.secret
+      user:
+        name: root
+      group:
+        name: container-group-1001
+    - path: "/opt/systemd/lldap/secrets/lldap_sanderdewitte.nl_key_seed.secret"
+      mode: 0440
+      contents:
+        local: files/lldap_sanderdewitte.nl_key_seed.secret
+      user:
+        name: root
+      group:
+        name: container-group-1001
+    - path: "/opt/systemd/lldap/.env"
+      mode: 0644
+      contents:
+        local: files/lldap.env
+    - path: "/opt/systemd/lldap/docker-compose.yml"
+      mode: 0644
+      contents:
+        inline: |-
+          version: '3.9'
+          services:
+            lldap_domain_00:
+              image: lldap/lldap:stable-alpine
+              container_name: lldap-${SERVER_DOMAIN_NAME}
+              security_opt:
+                - no-new-privileges
+                - label:disable
+              volumes:
+                - "domain_00_data:/data:rw"
+                - "/opt/lldap/lldap_config.${SERVER_DOMAIN_NAME}.toml:/data/lldap_config.toml:ro,Z"
+              ports:
+                - $HTTP_PORT_DOMAIN_00:$HTTP_PORT_DOMAIN_00
+              secrets:
+                - "domain_00_ldap_admin_pwd"
+                - "domain_00_jwt_secret"
+                - "domain_00_key_seed"
+              labels:
+                - "traefik.enable=true"
+                - "traefik.http.routers.lldap_domain_00.service=lldap_domain_00"
+                - "traefik.http.routers.lldap_domain_00.rule=Host(`ldap.${SERVER_DOMAIN_NAME}`)"
+                - "traefik.http.routers.lldap_domain_00.entrypoints=websecure"
+                - "traefik.http.routers.lldap_domain_00.tls.certresolver=letsencryptresolver"
+                - "traefik.http.services.lldap_domain_00.loadbalancer.server.port=${HTTP_PORT_DOMAIN_00}"
+              environment:
+                - "UID=${CONTAINER_USER_ID}"
+                - "GID=${CONTAINER_GROUP_ID}"
+                - "TZ=${TZ}"
+                - "LLDAP_VERBOSE=false"
+                - "LLDAP_LDAP_HOST=0.0.0.0"
+                - "LLDAP_LDAP_PORT=${LDAP_PORT}"
+                - "LLDAP_HTTP_HOST=0.0.0.0"
+                - "LLDAP_HTTP_PORT=${HTTP_PORT_DOMAIN_00}"
+                - "LLDAP_HTTP_URL=https://ldap.${SERVER_DOMAIN_NAME}"
+                - "LLDAP_DATABASE_URL=sqlite:///data/users.db?mode=rwc"
+                - "LLDAP_LDAP_USER_DN=admin"
+                - "LLDAP_LDAP_USER_PASS_FILE=/run/secrets/domain_00_ldap_admin_pwd"
+                - "LLDAP_LDAP_USER_EMAIL=ldap-admin@${SERVER_DOMAIN_NAME}"
+                - "LLDAP_JWT_SECRET_FILE=/run/secrets/domain_00_jwt_secret"
+                - "LLDAP_KEY_SEED_FILE=/run/secrets/domain_00_key_seed"
+              networks:
+                - traefik
+              restart: unless-stopped
+            lldap_domain_01:
+              image: lldap/lldap:stable-alpine
+              container_name: lldap-${ADDITIONAL_DOMAIN_NAME_01}
+              security_opt:
+                - no-new-privileges
+                - label:disable
+              volumes:
+                - "domain_01_data:/data:rw"
+                - "/opt/lldap/lldap_config.${ADDITIONAL_DOMAIN_NAME_01}.toml:/data/lldap_config.toml:ro,Z"
+              ports:
+                - $HTTP_PORT_DOMAIN_01:$HTTP_PORT_DOMAIN_01
+              secrets:
+                - "domain_01_ldap_admin_pwd"
+                - "domain_01_jwt_secret"
+                - "domain_01_key_seed"
+              labels:
+                - "traefik.enable=true"
+                - "traefik.http.routers.lldap_domain_01.service=lldap_domain_01"
+                - "traefik.http.routers.lldap_domain_01.rule=Host(`ldap.${ADDITIONAL_DOMAIN_NAME_01}`)"
+                - "traefik.http.routers.lldap_domain_01.entrypoints=websecure"
+                - "traefik.http.routers.lldap_domain_01.tls.certresolver=letsencryptresolver"
+                - "traefik.http.services.lldap_domain_01.loadbalancer.server.port=${HTTP_PORT_DOMAIN_01}"
+              environment:
+                - "UID=${CONTAINER_USER_ID}"
+                - "GID=${CONTAINER_GROUP_ID}"
+                - "TZ=${TZ}"
+                - "LLDAP_VERBOSE=false"
+                - "LLDAP_LDAP_HOST=0.0.0.0"
+                - "LLDAP_LDAP_PORT=${LDAP_PORT}"
+                - "LLDAP_HTTP_HOST=0.0.0.0"
+                - "LLDAP_HTTP_PORT=${HTTP_PORT_DOMAIN_01}"
+                - "LLDAP_HTTP_URL=https://ldap.${ADDITIONAL_DOMAIN_NAME_01}"
+                - "LLDAP_DATABASE_URL=sqlite:///data/users.db?mode=rwc"
+                - "LLDAP_LDAP_USER_DN=admin"
+                - "LLDAP_LDAP_USER_PASS_FILE=/run/secrets/domain_01_ldap_admin_pwd"
+                - "LLDAP_LDAP_USER_EMAIL=ldap-admin@${ADDITIONAL_DOMAIN_NAME_01}"
+                - "LLDAP_JWT_SECRET_FILE=/run/secrets/domain_01_jwt_secret"
+                - "LLDAP_KEY_SEED_FILE=/run/secrets/domain_01_key_seed"
+              networks:
+                - traefik
+              restart: unless-stopped
+          volumes:
+            domain_00_data:
+              external: false
+            domain_01_data:
+              external: false
+          networks:
+            traefik:
+              name: backend
+              external: true
+          secrets:
+            domain_00_ldap_admin_pwd:
+              file: "./secrets/lldap_${SERVER_DOMAIN_NAME}_admin.secret"
+            domain_00_jwt_secret:
+              file: "./secrets/lldap_${SERVER_DOMAIN_NAME}_jwt.secret"
+            domain_00_key_seed:
+              file: "./secrets/lldap_${SERVER_DOMAIN_NAME}_key_seed.secret"
+            domain_01_ldap_admin_pwd:
+              file: "./secrets/lldap_${ADDITIONAL_DOMAIN_NAME_01}_admin.secret"
+            domain_01_jwt_secret:
+              file: "./secrets/lldap_${ADDITIONAL_DOMAIN_NAME_01}_jwt.secret"
+            domain_01_key_seed:
+              file: "./secrets/lldap_${ADDITIONAL_DOMAIN_NAME_01}_key_seed.secret"
+  links:
+    - path: /opt/systemd/lldap/docker-compose-backup.sh
+      target: /usr/local/bin/docker-compose-backup.sh
+systemd:
+  units:
+    - name: docker.lldap.service
+      enabled: true
+      contents: |-
+        [Unit]
+        Description=LLDAP Container
+        After=network-online.target docker.service docker.traefik.service
+        Requires=network.target network-online.target docker.service docker.traefik.service
+        
+        [Service]
+        Type=oneshot
+        TimeoutStartSec=0
+        RemainAfterExit=true
+        EnvironmentFile=-/etc/sysconfig/coreos.env
+        WorkingDirectory=/opt/systemd/lldap/
+        ExecStartPre=-/usr/bin/docker compose down
+        ExecStartPre=-/usr/bin/docker compose rm
+        ExecStartPre=-/usr/bin/docker compose pull
+        ExecStart=/usr/bin/docker compose up -d
+        ExecStop=/usr/bin/docker compose down
+        
+        [Install]
+        WantedBy=multi-user.target
+    - name: backup.docker.lldap.service
+      enabled: false
+      contents: |-
+        [Unit]
+        Description=Backup LLDAP Container
+        After=docker.lldap.service
+        Requires=docker.lldap.service
+        
+        [Service]
+        Type=oneshot
+        EnvironmentFile=-/etc/sysconfig/coreos.env
+        WorkingDirectory=/opt/systemd/lldap/
+        ExecStart=/opt/systemd/lldap/docker-compose-backup.sh
+        
+        [Install]
+        WantedBy=backup.docker.lldap.timer
+    - name: backup.docker.lldap.timer
+      enabled: true
+      contents: |-
+        [Unit]
+        Description=Backup LLDAP Container at 02:30 daily
+        
+        [Timer]
+        OnCalendar=*-*-* 02:30:00
+        Unit=backup.docker.lldap.service
+        
+        [Install]
+        WantedBy=timers.target
