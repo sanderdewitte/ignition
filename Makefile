@@ -40,6 +40,7 @@ generate-ignition: butane
 	$(DOCKER) run --rm \
 		--volume ${PWD}:/pwd \
 		--workdir /pwd \
+		--user $$(id -u):$$(id -g) \
 		$(BUTANE_IMAGE) \
 		$(BUTANE_OPTIONS) \
 		--files-dir ${TEMP_DIR}/ \
