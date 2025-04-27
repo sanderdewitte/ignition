@@ -1,4 +1,7 @@
-.PHONY: all clean
+.PHONY: all generate-ignition generate-butane clean clean-temp clean-ignition clean-butane
+
+.ONESHELL:
+SHELL := /bin/bash
 
 DOCKER := /usr/bin/env docker
 YAML_PROCESSOR_IMAGE := docker.io/mikefarah/yq:latest
@@ -16,7 +19,7 @@ endif
 
 IGNITION := $(BUTANE:.bu=.ign)
 
-all: ignition
+all: ignition clean
 
 generate-butane:
 	mkdir -p ${TEMP_DIR} && ln -s ../files ${TEMP_DIR}/files
@@ -31,7 +34,7 @@ generate-butane:
 		--inplace \
 		eval 'del(.ignition.config.merge)' ${TEMP_DIR}/${BUTANE}
 
-butane: generate-butane
+butane: clean-butane generate-butane
 
 generate-ignition: butane
 	$(DOCKER) run --rm \
@@ -43,7 +46,7 @@ generate-ignition: butane
 		--output ./$(IGNITION) \
 		${TEMP_DIR}/${BUTANE}
 
-ignition: clean-ignition clean-butane generate-ignition clean-butane clean-temp
+ignition: clean-ignition generate-ignition
 
 clean-butane:
 	rm -f ${TEMP_DIR}/${BUTANE}
